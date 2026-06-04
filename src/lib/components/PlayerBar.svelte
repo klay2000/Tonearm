@@ -239,7 +239,9 @@
       onpointercancel={onScrubEnd}
       aria-label="Seek"
     >
-      <div class="progress-fill" style="width: {progress}%"></div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {progress}%"></div>
+      </div>
       <div class="progress-thumb" style="left: {progress}%"></div>
     </button>
     <input
@@ -361,8 +363,8 @@
     position: relative;
     touch-action: none;
   }
-  .progress-track::before {
-    content: '';
+  .progress-track.scrubbing { cursor: ew-resize; }
+  .progress-bar {
     position: absolute;
     left: 0; right: 0;
     top: 50%;
@@ -370,15 +372,11 @@
     margin-top: -2px;
     background: var(--border);
     border-radius: 2px;
+    overflow: hidden;
     pointer-events: none;
   }
-  .progress-track.scrubbing { cursor: ew-resize; }
   .progress-fill {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    height: 4px;
-    margin-top: -2px;
+    height: 100%;
     background: var(--accent);
     border-radius: 2px;
     pointer-events: none;
