@@ -60,6 +60,7 @@
 
   // Queue drag-to-reorder
   let dragFrom = $state(null)
+  let dragOver = $state(null)
 
   function onDragStart(e, i) {
     dragFrom = i
@@ -69,12 +70,24 @@
   function onDragOver(e, i) {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    dragOver = i
+  }
+
+  function onDragEnd() {
+    dragFrom = null
+    dragOver = null
   }
 
   function onDrop(e, i) {
     e.preventDefault()
     if (dragFrom !== null && dragFrom !== i) moveQueueItem(dragFrom, i)
     dragFrom = null
+    dragOver = null
+  }
+
+  function playFromQueue(i) {
+    queueIndex.set(i)
+    playing.set(true)
   }
 </script>
 
@@ -97,19 +110,25 @@
         <div
           class="queue-item"
           class:queue-active={i === $queueIndex}
+          class:queue-dragging={i === dragFrom}
           draggable="true"
           ondragstart={e => onDragStart(e, i)}
           ondragover={e => onDragOver(e, i)}
+          ondragend={onDragEnd}
           ondrop={e => onDrop(e, i)}
+          onclick={() => playFromQueue(i)}
           role="listitem"
         >
-          <span class="queue-drag">⠿</span>
+          {#if dragOver === i && dragFrom !== i}
+            <div class="drop-indicator"></div>
+          {/if}
+          <span class="queue-drag" onclick={e => e.stopPropagation()}>⠿</span>
           <img src={coverUrl(track.coverArt ?? track.albumId, 32)} alt="" class="queue-thumb" />
           <div class="queue-info">
             <span class="queue-track-title">{track.title}</span>
             <span class="queue-track-artist">{track.artist}</span>
           </div>
-          <button class="queue-remove" onclick={() => removeFromQueue(i)} aria-label="Remove">✕</button>
+          <button class="queue-remove" onclick={e => { e.stopPropagation(); removeFromQueue(i) }} aria-label="Remove">✕</button>
         </div>
       {/each}
     </div>
@@ -342,10 +361,22 @@
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    cursor: default;
+    cursor: pointer;
+    position: relative;
   }
   .queue-item:hover { background: var(--bg); }
   .queue-active { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; }
+  .queue-dragging { opacity: 0.4; }
+  .drop-indicator {
+    position: absolute;
+    top: 0;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+    pointer-events: none;
+  }
   .queue-drag {
     color: var(--text-muted);
     font-size: 14px;
