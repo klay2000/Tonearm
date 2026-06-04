@@ -355,16 +355,30 @@
   .progress-track {
     flex: 1;
     max-width: 200px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
+    height: 20px;
+    background: transparent;
     cursor: pointer;
     position: relative;
     touch-action: none;
   }
+  .progress-track::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 4px;
+    margin-top: -2px;
+    background: var(--border);
+    border-radius: 2px;
+    pointer-events: none;
+  }
   .progress-track.scrubbing { cursor: ew-resize; }
   .progress-fill {
-    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    height: 4px;
+    margin-top: -2px;
     background: var(--accent);
     border-radius: 2px;
     pointer-events: none;
