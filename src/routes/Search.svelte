@@ -1,6 +1,6 @@
 <script>
   import { search, coverUrl } from '../lib/api/subsonic.js'
-  import { playQueue } from '../lib/stores/player.js'
+  import { playQueue, insertNext, enqueue } from '../lib/stores/player.js'
 
   let { query } = $props()
 
@@ -57,10 +57,16 @@
       <h2>Songs</h2>
       <div class="rows">
         {#each results.song as song, i}
-          <button class="row song-row" onclick={() => playQueue(results.song, i)}>
-            <span class="song-title">{song.title}</span>
-            <span class="song-sub">{song.artist} · {song.album}</span>
-          </button>
+          <div class="row song-row">
+            <button class="song-main" onclick={() => playQueue(results.song, i)}>
+              <span class="song-title">{song.title}</span>
+              <span class="song-sub">{song.artist} · {song.album}</span>
+            </button>
+            <div class="song-actions">
+              <button title="Play next" onclick={() => insertNext(song)}>↑</button>
+              <button title="Add to queue" onclick={() => enqueue(song)}>+</button>
+            </div>
+          </div>
         {/each}
       </div>
     </section>
@@ -107,10 +113,35 @@
   .row-sub { font-size: 12px; color: var(--text-muted); }
 
   .song-row {
-    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 !important;
+  }
+  .song-main {
+    flex: 1;
     display: flex;
     flex-direction: column;
+    text-align: left;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
   }
+  .song-main:hover { background: var(--surface); }
   .song-title { font-weight: 500; }
   .song-sub { font-size: 12px; color: var(--text-muted); }
+  .song-actions {
+    display: flex;
+    gap: 4px;
+    padding-right: 8px;
+    opacity: 0;
+  }
+  .song-row:hover .song-actions { opacity: 1; }
+  .song-actions button {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .song-actions button:hover { color: var(--accent); }
 </style>

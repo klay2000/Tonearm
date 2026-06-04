@@ -1,6 +1,6 @@
 <script>
   import { getAlbum, coverUrl } from '../lib/api/subsonic.js'
-  import { playQueue } from '../lib/stores/player.js'
+  import { playQueue, currentTrack, playing, insertNext, enqueue } from '../lib/stores/player.js'
 
   let { id } = $props()
 
@@ -25,6 +25,10 @@
     const s = (secs % 60).toString().padStart(2, '0')
     return `${m}:${s}`
   }
+
+  function isCurrentTrack(track) {
+    return $currentTrack?.id === track.id
+  }
 </script>
 
 {#if loading}
@@ -38,17 +42,34 @@
       <h1>{album.name}</h1>
       <a class="artist-link" href="#/artist/{album.artistId}">{album.artist}</a>
       <span class="sub">{album.year ?? ''}{album.year && album.songCount ? ' · ' : ''}{album.songCount} tracks · {fmt(album.duration)}</span>
-      <button class="play-all" onclick={() => playFrom(0)}>▶ Play all</button>
+      <div class="header-actions">
+        <button class="play-all" onclick={() => playFrom(0)}>▶ Play all</button>
+        <button class="enqueue-all" onclick={() => enqueue(album.song)}>+ Add to queue</button>
+      </div>
     </div>
   </div>
 
   <table class="track-list">
     <tbody>
       {#each album.song ?? [] as track, i}
-        <tr onclick={() => playFrom(i)}>
-          <td class="num">{track.track ?? i + 1}</td>
-          <td class="title">{track.title}</td>
+        {@const active = isCurrentTrack(track)}
+        <tr
+          onclick={() => playFrom(i)}
+          class:active
+        >
+          <td class="num">
+            {#if active && $playing}
+              <span class="playing-icon">▶</span>
+            {:else}
+              {track.track ?? i + 1}
+            {/if}
+          </td>
+          <td class="title" class:accent={active}>{track.title}</td>
           <td class="dur">{fmt(track.duration)}</td>
+          <td class="actions" onclick={e => e.stopPropagation()}>
+            <button title="Play next" onclick={() => insertNext(track)}>↑</button>
+            <button title="Add to queue" onclick={() => enqueue(track)}>+</button>
+          </td>
         </tr>
       {/each}
     </tbody>
@@ -82,32 +103,49 @@
   .artist-link { color: var(--accent); font-weight: 500; }
   .artist-link:hover { text-decoration: underline; }
   .sub { color: var(--text-muted); font-size: 13px; }
-  .play-all {
-    margin-top: 8px;
+  .header-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .play-all, .enqueue-all {
     padding: 8px 20px;
-    background: var(--accent);
-    color: white;
     border-radius: 20px;
     font-weight: 600;
     font-size: 13px;
-    width: fit-content;
   }
+  .play-all { background: var(--accent); color: white; }
+  .enqueue-all { border: 1px solid var(--border); color: var(--text); }
+  .enqueue-all:hover { border-color: var(--accent); color: var(--accent); }
 
   .track-list {
     width: 100%;
     border-collapse: collapse;
   }
-  tr {
-    cursor: pointer;
-    border-radius: 6px;
-  }
+  tr { cursor: pointer; }
   tr:hover td { background: var(--surface); }
-  td {
-    padding: 8px 12px;
-  }
+  tr.active td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  td { padding: 8px 12px; }
   td:first-child { border-radius: 6px 0 0 6px; }
   td:last-child { border-radius: 0 6px 6px 0; }
-  .num { color: var(--text-muted); width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+  .num {
+    color: var(--text-muted);
+    width: 32px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .playing-icon { color: var(--accent); font-size: 11px; }
   .title { font-weight: 500; }
+  .title.accent { color: var(--accent); }
   .dur { color: var(--text-muted); text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .actions {
+    text-align: right;
+    white-space: nowrap;
+    opacity: 0;
+    width: 60px;
+  }
+  tr:hover .actions { opacity: 1; }
+  .actions button {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .actions button:hover { color: var(--accent); }
 </style>

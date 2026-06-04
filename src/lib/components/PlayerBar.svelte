@@ -1,9 +1,9 @@
 <script>
-  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex } from '../stores/player.js'
+  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue } from '../stores/player.js'
   import { coverUrl, streamUrl } from '../api/subsonic.js'
-  import { get } from 'svelte/store'
 
   let audio = $state(null)
+  let showQueue = $state(false)
 
   // React to track changes
   $effect(() => {
@@ -23,9 +23,6 @@
     if ($playing) audio.play().catch(() => {})
     else audio.pause()
   })
-
-  // Seek when currentTime is set externally (from store)
-  // (We don't do two-way binding to avoid feedback loops — audio drives the store)
 
   function onTimeUpdate() {
     currentTime.set(audio.currentTime)
@@ -56,6 +53,25 @@
   }
 
   let progress = $derived($duration ? ($currentTime / $duration) * 100 : 0)
+
+  // Queue drag-to-reorder
+  let dragFrom = $state(null)
+
+  function onDragStart(e, i) {
+    dragFrom = i
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  function onDragOver(e, i) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  function onDrop(e, i) {
+    e.preventDefault()
+    if (dragFrom !== null && dragFrom !== i) moveQueueItem(dragFrom, i)
+    dragFrom = null
+  }
 </script>
 
 <!-- svelte-ignore a11y_media_has_caption -->
@@ -65,6 +81,36 @@
   onended={onEnded}
   volume={$volume}
 ></audio>
+
+{#if showQueue && $queue.length}
+  <div class="queue-panel">
+    <div class="queue-header">
+      <span class="queue-title">Queue</span>
+      <button onclick={() => showQueue = false} aria-label="Close queue">✕</button>
+    </div>
+    <div class="queue-list">
+      {#each $queue as track, i}
+        <div
+          class="queue-item"
+          class:queue-active={i === $queueIndex}
+          draggable="true"
+          ondragstart={e => onDragStart(e, i)}
+          ondragover={e => onDragOver(e, i)}
+          ondrop={e => onDrop(e, i)}
+          role="listitem"
+        >
+          <span class="queue-drag">⠿</span>
+          <img src={coverUrl(track.coverArt ?? track.albumId, 32)} alt="" class="queue-thumb" />
+          <div class="queue-info">
+            <span class="queue-track-title">{track.title}</span>
+            <span class="queue-track-artist">{track.artist}</span>
+          </div>
+          <button class="queue-remove" onclick={() => removeFromQueue(i)} aria-label="Remove">✕</button>
+        </div>
+      {/each}
+    </div>
+  </div>
+{/if}
 
 <div class="player">
   {#if $currentTrack}
@@ -118,6 +164,19 @@
       aria-label="Volume"
       style="background: linear-gradient(to right, var(--accent) {$volume * 100}%, var(--border) {$volume * 100}%)"
     />
+    <button
+      class="queue-btn"
+      class:queue-btn-active={showQueue}
+      onclick={() => showQueue = !showQueue}
+      aria-label="Toggle queue"
+      title="Queue"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <rect x="2" y="3" width="12" height="2" rx="1"/>
+        <rect x="2" y="7" width="9" height="2" rx="1"/>
+        <rect x="2" y="11" width="6" height="2" rx="1"/>
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -131,6 +190,8 @@
     background: var(--surface);
     border-top: 1px solid var(--border);
     height: var(--player-h);
+    position: relative;
+    z-index: 10;
   }
   .now-playing {
     display: flex;
@@ -236,4 +297,92 @@
     border: 2px solid var(--surface);
     cursor: pointer;
   }
+  .queue-btn {
+    opacity: 0.5;
+    padding: 4px;
+    border-radius: 4px;
+  }
+  .queue-btn:hover { opacity: 1; }
+  .queue-btn-active { opacity: 1; color: var(--accent); }
+
+  /* Queue panel */
+  .queue-panel {
+    position: fixed;
+    bottom: var(--player-h);
+    right: 0;
+    width: 320px;
+    max-height: 60vh;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 8px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 9;
+    box-shadow: -4px -4px 16px rgba(0,0,0,0.12);
+  }
+  .queue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .queue-title { font-weight: 600; font-size: 13px; }
+  .queue-header button { opacity: 0.5; font-size: 13px; }
+  .queue-header button:hover { opacity: 1; }
+  .queue-list { overflow-y: auto; flex: 1; padding: 4px 0; }
+  .queue-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    cursor: default;
+  }
+  .queue-item:hover { background: var(--bg); }
+  .queue-active { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; }
+  .queue-drag {
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+  .queue-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 3px;
+    object-fit: cover;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .queue-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .queue-track-title {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .queue-track-artist {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .queue-remove {
+    opacity: 0;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 2px 4px;
+    flex-shrink: 0;
+  }
+  .queue-item:hover .queue-remove { opacity: 1; }
+  .queue-remove:hover { color: #e05; }
 </style>

@@ -26,7 +26,6 @@ export function playNext() {
 
 export function playPrev() {
   const i = get(queueIndex)
-  // If more than 3s in, restart track; otherwise go to previous
   if (get(currentTime) > 3) {
     currentTime.set(0)
   } else {
@@ -36,4 +35,43 @@ export function playPrev() {
 
 export function togglePlay() {
   playing.update(p => !p)
+}
+
+// Insert tracks immediately after current position
+export function insertNext(tracks) {
+  const arr = Array.isArray(tracks) ? tracks : [tracks]
+  const i = get(queueIndex)
+  queue.update(q => [...q.slice(0, i + 1), ...arr, ...q.slice(i + 1)])
+}
+
+// Append tracks to end of queue
+export function enqueue(tracks) {
+  const arr = Array.isArray(tracks) ? tracks : [tracks]
+  queue.update(q => [...q, ...arr])
+}
+
+// Move a track from one index to another (for queue reordering)
+export function moveQueueItem(from, to) {
+  queue.update(q => {
+    const next = [...q]
+    const [item] = next.splice(from, 1)
+    next.splice(to, 0, item)
+    return next
+  })
+  // Keep queueIndex pointing at the same track after the move
+  const i = get(queueIndex)
+  if (from === i) {
+    queueIndex.set(to)
+  } else if (from < i && to >= i) {
+    queueIndex.set(i - 1)
+  } else if (from > i && to <= i) {
+    queueIndex.set(i + 1)
+  }
+}
+
+export function removeFromQueue(index) {
+  const i = get(queueIndex)
+  queue.update(q => q.filter((_, n) => n !== index))
+  if (index < i) queueIndex.set(i - 1)
+  else if (index === i) queueIndex.set(Math.min(i, get(queue).length - 1))
 }
