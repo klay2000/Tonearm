@@ -111,7 +111,7 @@
       <button onclick={() => showQueue = false} aria-label="Close queue">✕</button>
     </div>
     <div class="queue-list">
-      {#each $queue as track, i}
+      {#each $queue as track, i (track.id)}
         <div
           class="queue-item"
           class:queue-active={i === $queueIndex}

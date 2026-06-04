@@ -73,6 +73,24 @@ export async function search(query) {
   return data.searchResult3 ?? {}
 }
 
+export async function getAllAlbums() {
+  const albums = []
+  let offset = 0
+  while (true) {
+    const data = await request('getAlbumList2', { type: 'alphabeticalByName', size: 500, offset })
+    const page = data.albumList2?.album ?? []
+    albums.push(...page)
+    if (page.length < 500) break
+    offset += 500
+  }
+  return albums
+}
+
+export async function getRandomSongs(size = 500) {
+  const data = await request('getRandomSongs', { size })
+  return data.randomSongs?.song ?? []
+}
+
 export function streamUrl(id) {
   return buildUrl('stream', { id }).toString()
 }
