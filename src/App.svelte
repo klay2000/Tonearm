@@ -2,6 +2,8 @@
   import { router } from './lib/stores/router.js'
   import { togglePlay, playNext, playPrev, volume } from './lib/stores/player.js'
   import { get } from 'svelte/store'
+  import { isLoggedIn } from './lib/stores/auth.js'
+  import Login from './routes/Login.svelte'
   import Header from './lib/components/Header.svelte'
   import Sidebar from './lib/components/Sidebar.svelte'
   import PlayerBar from './lib/components/PlayerBar.svelte'
@@ -46,16 +48,20 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="app">
-  <Header />
-  <div class="body">
-    <Sidebar />
-    <main>
-      <Page {...props} />
-    </main>
+{#if $isLoggedIn}
+  <div class="app">
+    <Header />
+    <div class="body">
+      <Sidebar />
+      <main>
+        <Page {...props} />
+      </main>
+    </div>
+    <PlayerBar />
   </div>
-  <PlayerBar />
-</div>
+{:else}
+  <Login />
+{/if}
 
 <style>
   :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }

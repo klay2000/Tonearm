@@ -1,30 +1,41 @@
-const BASE_URL = 'http://10.0.0.10:4747/rest'
-const AUTH = {
-  u: 'aesthetic',
-  p: 'ZZrDHzetZBtubU6xaCav',
-  v: '1.16.0',
-  c: 'aesthetic-client',
-  f: 'json',
+import { get } from 'svelte/store'
+import { auth } from '../stores/auth.js'
+
+const API_META = { v: '1.16.0', c: 'aesthetic-client', f: 'json' }
+
+function credentials() {
+  const a = get(auth)
+  if (!a) throw new Error('Not authenticated')
+  return a
 }
 
-function authParams() {
-  return new URLSearchParams(AUTH).toString()
+function buildUrl(endpoint, extra = {}) {
+  const { serverUrl, username, password } = credentials()
+  const url = new URL(`${serverUrl}/rest/${endpoint}`)
+  Object.entries({ u: username, p: password, ...API_META, ...extra })
+    .forEach(([k, v]) => url.searchParams.set(k, v))
+  return url
 }
 
 async function request(endpoint, params = {}) {
-  const url = new URL(`${BASE_URL}/${endpoint}`)
-  Object.entries({ ...AUTH, ...params }).forEach(([k, v]) => url.searchParams.set(k, v))
-
+  const url = buildUrl(endpoint, params)
   const res = await fetch(url)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
   const data = await res.json()
   const root = data['subsonic-response']
+  if (root.status === 'failed') throw new Error(root.error?.message ?? 'Subsonic error')
+  return root
+}
 
-  if (root.status === 'failed') {
-    throw new Error(root.error?.message ?? 'Subsonic error')
-  }
-
+export async function testConnection(serverUrl, username, password) {
+  const url = new URL(`${serverUrl.replace(/\/$/, '')}/rest/ping`)
+  Object.entries({ u: username, p: password, ...API_META })
+    .forEach(([k, v]) => url.searchParams.set(k, v))
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const data = await res.json()
+  const root = data['subsonic-response']
+  if (root.status === 'failed') throw new Error(root.error?.message ?? 'Subsonic error')
   return root
 }
 
@@ -63,9 +74,9 @@ export async function search(query) {
 }
 
 export function streamUrl(id) {
-  return `${BASE_URL}/stream?id=${id}&${authParams()}`
+  return buildUrl('stream', { id }).toString()
 }
 
 export function coverUrl(id, size = 256) {
-  return `${BASE_URL}/getCoverArt?id=${id}&size=${size}&${authParams()}`
+  return buildUrl('getCoverArt', { id, size }).toString()
 }
