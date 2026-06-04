@@ -62,8 +62,10 @@
 
   function onScrubEnd() {
     if (!scrubbing) return
+    const target = scrubRatio * $duration
+    currentTime.set(target)
     scrubbing = false
-    if (audio && $duration) audio.currentTime = scrubRatio * $duration
+    if (audio && $duration) audio.currentTime = target
   }
 
   function onVolumeChange(e) {
