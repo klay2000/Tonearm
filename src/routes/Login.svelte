@@ -25,7 +25,7 @@
 
 <div class="login-page">
   <div class="card">
-    <h1>Aesthetic</h1>
+    <h1>Tonearm</h1>
     <form onsubmit={onSubmit}>
       <label>
         Server URL
