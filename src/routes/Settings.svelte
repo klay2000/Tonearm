@@ -1,11 +1,17 @@
 <script>
   import { themePref } from '../lib/stores/theme.js'
   import { auth, logout } from '../lib/stores/auth.js'
+  import { shuffleMode } from '../lib/stores/player.js'
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Follow sunrise/sunset at your location' },
     { value: 'light', label: 'Light', desc: 'Always light' },
     { value: 'dark',  label: 'Dark',  desc: 'Always dark' },
+  ]
+
+  const shuffleModeOptions = [
+    { value: 'random',  label: 'Random next', desc: 'Pick a random track each time one ends' },
+    { value: 'reorder', label: 'Reorder queue', desc: 'Shuffle the queue in place when toggled on' },
   ]
 </script>
 
@@ -22,6 +28,25 @@
             class="option"
             class:selected={$themePref === opt.value}
             onclick={() => themePref.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Playback</h2>
+    <div class="field">
+      <span class="label">Shuffle mode</span>
+      <div class="options">
+        {#each shuffleModeOptions as opt}
+          <button
+            class="option"
+            class:selected={$shuffleMode === opt.value}
+            onclick={() => shuffleMode.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>

@@ -1,5 +1,5 @@
 <script>
-  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue } from '../stores/player.js'
+  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, shuffle, repeat, toggleShuffle, cycleRepeat } from '../stores/player.js'
   import { coverUrl, streamUrl } from '../api/subsonic.js'
 
   let audio = $state(null)
@@ -34,7 +34,12 @@
   }
 
   function onEnded() {
-    playNext()
+    if ($repeat === 'one') {
+      audio.currentTime = 0
+      audio.play().catch(() => {})
+    } else {
+      playNext()
+    }
   }
 
   function seek(e) {
@@ -149,6 +154,21 @@
   {/if}
 
   <div class="controls">
+    <button
+      class="aux-btn"
+      class:aux-active={$shuffle}
+      onclick={toggleShuffle}
+      aria-label="Shuffle"
+      title="Shuffle"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 4h2.5l5 8H13"/>
+        <path d="M2 12h2.5l2-2.8"/>
+        <path d="M8.5 6.8L10.5 4H13"/>
+        <polyline points="11,2 13,4 11,6"/>
+        <polyline points="11,10 13,12 11,14"/>
+      </svg>
+    </button>
     <button onclick={playPrev} aria-label="Previous">
       <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
         <polygon points="8,2 2,8 8,14" /><rect x="9" y="2" width="3" height="12" rx="1"/>
@@ -170,6 +190,26 @@
       <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
         <polygon points="8,2 14,8 8,14" /><rect x="4" y="2" width="3" height="12" rx="1"/>
       </svg>
+    </button>
+    <button
+      class="aux-btn"
+      class:aux-active={$repeat !== 'off'}
+      onclick={cycleRepeat}
+      aria-label="Repeat"
+      title="Repeat: {$repeat}"
+    >
+      {#if $repeat === 'one'}
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9a5 5 0 1 0 1-3.5"/>
+          <polyline points="1,4 3,6 5,4"/>
+          <text x="6" y="11" font-size="6" fill="currentColor" stroke="none" font-weight="700">1</text>
+        </svg>
+      {:else}
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9a5 5 0 1 0 1-3.5"/>
+          <polyline points="1,4 3,6 5,4"/>
+        </svg>
+      {/if}
     </button>
   </div>
 
@@ -255,6 +295,16 @@
     gap: 12px;
     font-size: 13px;
   }
+  .aux-btn {
+    opacity: 0.4;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .aux-btn:hover { opacity: 0.8; }
+  .aux-active { opacity: 1; color: var(--accent); }
   .play-btn {
     font-size: 20px;
     width: 36px;

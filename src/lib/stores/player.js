@@ -6,11 +6,39 @@ export const playing = writable(false)
 export const currentTime = writable(0)
 export const duration = writable(0)
 export const volume = writable(1)
+export const shuffle = writable(false)
+export const repeat = writable('off') // 'off' | 'all' | 'one'
+// 'random': pick a random next track each time
+// 'reorder': physically shuffle the queue when shuffle is toggled on
+export const shuffleMode = writable(localStorage.getItem('subsonic_shuffle_mode') ?? 'random')
+shuffleMode.subscribe(v => localStorage.setItem('subsonic_shuffle_mode', v))
 
 export const currentTrack = derived(
   [queue, queueIndex],
   ([$queue, $queueIndex]) => $queue[$queueIndex] ?? null
 )
+
+export function toggleShuffle() {
+  const next = !get(shuffle)
+  shuffle.set(next)
+  if (next && get(shuffleMode) === 'reorder') {
+    const i = get(queueIndex)
+    queue.update(q => {
+      const current = q[i]
+      const rest = q.filter((_, n) => n !== i)
+      for (let j = rest.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1))
+        ;[rest[j], rest[k]] = [rest[k], rest[j]]
+      }
+      return [current, ...rest]
+    })
+    queueIndex.set(0)
+  }
+}
+
+export function cycleRepeat() {
+  repeat.update(r => r === 'off' ? 'all' : r === 'all' ? 'one' : 'off')
+}
 
 export function playQueue(tracks, startIndex = 0) {
   queue.set(tracks)
@@ -21,7 +49,17 @@ export function playQueue(tracks, startIndex = 0) {
 export function playNext() {
   const i = get(queueIndex)
   const q = get(queue)
-  if (i < q.length - 1) queueIndex.set(i + 1)
+  const s = get(shuffle)
+  const r = get(repeat)
+  if (s && get(shuffleMode) === 'random' && q.length > 1) {
+    let next
+    do { next = Math.floor(Math.random() * q.length) } while (next === i)
+    queueIndex.set(next)
+  } else if (i < q.length - 1) {
+    queueIndex.set(i + 1)
+  } else if (r === 'all') {
+    queueIndex.set(0)
+  }
 }
 
 export function playPrev() {
