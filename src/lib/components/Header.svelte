@@ -1,17 +1,13 @@
 <script>
   import { navigate } from '../stores/router.js'
+  import { isDark, themePref, applyTheme } from '../stores/theme.js'
 
   let query = $state('')
-  const html = document.documentElement
-  let dark = $state(
-    html.classList.contains('dark') ||
-    (!html.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches)
-  )
 
   function toggleTheme() {
-    dark = !dark
-    html.classList.toggle('dark', dark)
-    html.classList.toggle('light', !dark)
+    // Manual toggle overrides auto: pick the opposite of current state
+    const next = $isDark ? 'light' : 'dark'
+    themePref.set(next)
   }
 
   function onSearch(e) {
@@ -30,7 +26,7 @@
     />
   </form>
   <button class="theme-btn" onclick={toggleTheme} aria-label="Toggle theme">
-    {dark ? '☀' : '🌙'}
+    {$isDark ? '☀' : '🌙'}
   </button>
 </header>
 

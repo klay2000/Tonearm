@@ -88,16 +88,6 @@
     --accent:    #9090fa;
     --border:    #3d3d3d;
   }
-  @media (prefers-color-scheme: dark) {
-    :global(html:not(.light)) {
-      --bg:        #1e1e1e;
-      --surface:   #2a2a2a;
-      --text:      #ffffff;
-      --text-muted:#b4b4b4;
-      --accent:    #9090fa;
-      --border:    #3d3d3d;
-    }
-  }
   :global(a) { color: inherit; text-decoration: none; }
   :global(button) { cursor: pointer; border: none; background: none; color: inherit; font: inherit; }
 
