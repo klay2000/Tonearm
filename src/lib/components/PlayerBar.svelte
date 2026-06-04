@@ -5,13 +5,17 @@
   let audio = $state(null)
   let showQueue = $state(false)
 
-  // React to track changes
+  // React to track changes — guard src assignment so queue mutations
+  // (enqueue, insertNext, reorder) don't reset the current track
   $effect(() => {
     const track = $currentTrack
     if (!audio) return
     if (track) {
-      audio.src = streamUrl(track.id)
-      if ($playing) audio.play()
+      const url = streamUrl(track.id)
+      if (audio.src !== url) {
+        audio.src = url
+        if ($playing) audio.play()
+      }
     } else {
       audio.src = ''
     }
