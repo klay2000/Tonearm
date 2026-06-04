@@ -7,8 +7,12 @@ A minimal, modern, self-hosted music client for [Gonic](https://github.com/sentr
 - Browse artists, albums, and tracks
 - Search across your library
 - Streaming playback with queue, seek, and volume control
+- Shuffle (random-next or reorder-queue) and repeat (off / all / one)
+- Play or shuffle an entire artist's discography in one click
+- Queue management: reorder by drag, remove tracks, play next
 - Artist avatars sourced from TheAudioDB and Wikimedia
-- Dark and light mode (follows system preference, manually toggleable)
+- Auto dark/light theme by sunrise/sunset (or set manually)
+- Settings screen: theme preference, shuffle mode
 - Keyboard shortcuts: `Space` play/pause · `→` next · `←` prev · `m` mute
 
 ## Stack
@@ -54,7 +58,3 @@ server {
     location /assets/ { expires 1y; add_header Cache-Control "public, immutable"; }
 }
 ```
-
-## Configuration
-
-Server credentials are set in `src/lib/api/subsonic.js`. Token auth (MD5) is on the roadmap.

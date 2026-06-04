@@ -1,6 +1,6 @@
 # Subsonic Client — Specification
 
-**Version**: 0.2
+**Version**: 0.3
 **Date**: 2026-06-04
 **Server**: Gonic at `http://10.0.0.10:4747`
 **Web host**: `http://192.168.122.79` (dev VM)
@@ -125,15 +125,18 @@ Collaboration artist names (`feat.`, `ft.`, `&`) are stripped to the primary art
 │Artists │                                    │
 │        │   Home:    greeting + album shelves│
 │        │   Artists: A–Z list with avatars   │
-│        │   Artist:  album grid              │
+│        │   Artist:  album grid + play/shuf  │
 │        │   Album:   track list + play all   │
 │        │   Search:  grouped results         │
+│        │   Settings: appearance + playback  │
 ├────────┴────────────────────────────────────┤
-│ [art]  Track · Artist   |◀  ▶  ▐▐  ═══  🔊 │  ← Player bar
+│ [art]  Track · Artist  ⇄ |◀  ▶  ▐▐  ▷  ↺  ═══  🔊  ≡ │
 └─────────────────────────────────────────────┘
 ```
 
 **Keyboard shortcuts**: `Space` play/pause · `→` next · `←` prev · `m` mute
+
+**Player bar controls**: shuffle (⇄) · prev · play/pause · next · repeat (↺, cycles off/all/one) · seek bar · volume · queue toggle
 
 ---
 
@@ -155,24 +158,31 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 
 ---
 
-## Implemented (v1)
+## Implemented
 
 - [x] Browse: artists (A–Z + jump bar), artist detail, album detail
 - [x] Home page: randomised greeting + recently added + discover shelves
 - [x] Search: grouped results with click-through
 - [x] Playback: streaming, queue, play/pause/prev/next, seek, volume
+- [x] Queue: view, reorder (drag), remove, click-to-play, play next / add to queue
+- [x] Shuffle: random-next mode or reorder-queue mode (configurable in Settings)
+- [x] Repeat: off / repeat-all / repeat-one
+- [x] Play artist / shuffle artist: fetches all albums in parallel and queues tracks
 - [x] Artist avatars: lazy-loaded with TheAudioDB/Wikidata/initials fallback
-- [x] Dark/light mode toggle
+- [x] Dark/light mode toggle + auto theme by sunrise/sunset
+- [x] Login screen with server URL + credentials
+- [x] Settings screen: theme preference, shuffle mode
 - [x] Keyboard shortcuts
 
 ## Roadmap
 
-| Feature | Phase |
-|---|---|
-| Playlists (view/create/edit) | v2 |
-| Last.fm scrobbling | v2 |
-| Download tracks | v2 |
-| Token auth (MD5) instead of plaintext password | v2 |
-| Multi-server support | v3 |
-| Tauri desktop / AppImage | after web stable |
-| Mobile (Tauri v2) | after desktop |
+| # | Feature | Status |
+|---|---|---|
+| [#1](https://github.com/klay2000/subsonic-client/issues/1) | ListenBrainz integration | open |
+| [#2](https://github.com/klay2000/subsonic-client/issues/2) | Music ingestion + library management | open |
+| [#6](https://github.com/klay2000/subsonic-client/issues/6) | Notifications | open |
+| [#8](https://github.com/klay2000/subsonic-client/issues/8) | Image scraping | open |
+| [#9](https://github.com/klay2000/subsonic-client/issues/9) | Desktop app (Tauri v2 AppImage) | open |
+| [#10](https://github.com/klay2000/subsonic-client/issues/10) | Mobile app | open |
+| [#11](https://github.com/klay2000/subsonic-client/issues/11) | Choose app name + update branding | open |
+| [#14](https://github.com/klay2000/subsonic-client/issues/14) | Play / shuffle library | open |
