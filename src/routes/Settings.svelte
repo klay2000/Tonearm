@@ -1,0 +1,106 @@
+<script>
+  import { themePref } from '../lib/stores/theme.js'
+  import { auth, logout } from '../lib/stores/auth.js'
+
+  const themeOptions = [
+    { value: 'auto',  label: 'Auto',  desc: 'Follow sunrise/sunset at your location' },
+    { value: 'light', label: 'Light', desc: 'Always light' },
+    { value: 'dark',  label: 'Dark',  desc: 'Always dark' },
+  ]
+</script>
+
+<div class="settings">
+  <h1>Settings</h1>
+
+  <section>
+    <h2>Appearance</h2>
+    <div class="field">
+      <span class="label">Theme</span>
+      <div class="options">
+        {#each themeOptions as opt}
+          <button
+            class="option"
+            class:selected={$themePref === opt.value}
+            onclick={() => themePref.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Server</h2>
+    <div class="field">
+      <span class="label">Connected to</span>
+      <span class="value">{$auth?.serverUrl}</span>
+    </div>
+    <div class="field">
+      <span class="label">Username</span>
+      <span class="value">{$auth?.username}</span>
+    </div>
+    <button class="logout-btn" onclick={logout}>Log out</button>
+  </section>
+</div>
+
+<style>
+  .settings { max-width: 520px; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 32px; }
+
+  section { margin-bottom: 36px; }
+  h2 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    width: 100px;
+    flex-shrink: 0;
+  }
+  .value { font-size: 13px; }
+
+  .options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .option {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    min-width: 110px;
+    transition: border-color 0.1s;
+  }
+  .option:hover { border-color: var(--accent); }
+  .option.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .opt-label { font-weight: 600; font-size: 13px; }
+  .opt-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+  .logout-btn {
+    margin-top: 4px;
+    padding: 8px 20px;
+    border: 1px solid #e05;
+    border-radius: 6px;
+    color: #e05;
+    font-weight: 500;
+    font-size: 13px;
+  }
+  .logout-btn:hover { background: color-mix(in srgb, #e05 10%, transparent); }
+</style>

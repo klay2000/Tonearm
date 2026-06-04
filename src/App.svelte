@@ -12,6 +12,7 @@
   import Artist from './routes/Artist.svelte'
   import Album from './routes/Album.svelte'
   import Search from './routes/Search.svelte'
+  import Settings from './routes/Settings.svelte'
 
   let { path, params } = $derived($router)
 
@@ -21,6 +22,7 @@
     if (path.startsWith('/artist/')) return { component: Artist, props: { id: path.split('/')[2] } }
     if (path.startsWith('/album/')) return { component: Album, props: { id: path.split('/')[2] } }
     if (path === '/search') return { component: Search, props: { query: params.q ?? '' } }
+    if (path === '/settings') return { component: Settings, props: {} }
     return { component: Home, props: {} }
   }
 

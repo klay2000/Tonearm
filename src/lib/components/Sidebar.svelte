@@ -6,27 +6,48 @@
     { href: '#/artists', label: 'Artists' },
   ]
 
+  const bottomLinks = [
+    { href: '#/settings', label: 'Settings' },
+  ]
+
   let currentPath = $derived($router.path)
 </script>
 
 <nav>
-  {#each links as link}
-    <a
-      href={link.href}
-      class:active={currentPath === link.href.slice(1) || (link.href === '#/' && (currentPath === '/' || currentPath === '/home'))}
-    >
-      {link.label}
-    </a>
-  {/each}
+  <div class="top">
+    {#each links as link}
+      <a
+        href={link.href}
+        class:active={currentPath === link.href.slice(1) || (link.href === '#/' && (currentPath === '/' || currentPath === '/home'))}
+      >
+        {link.label}
+      </a>
+    {/each}
+  </div>
+  <div class="bottom">
+    {#each bottomLinks as link}
+      <a
+        href={link.href}
+        class:active={currentPath === link.href.slice(1)}
+      >
+        {link.label}
+      </a>
+    {/each}
+  </div>
 </nav>
 
 <style>
   nav {
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     padding: 16px 0;
     background: var(--surface);
     border-right: 1px solid var(--border);
+  }
+  .top, .bottom {
+    display: flex;
+    flex-direction: column;
     gap: 2px;
   }
   a {
