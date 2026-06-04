@@ -17,7 +17,7 @@
 </script>
 
 <header>
-  <a class="logo" href="#/">Aesthetic</a>
+  <a class="logo" href="#/">Tonearm</a>
   <form class="search-form" onsubmit={onSearch}>
     <input
       type="search"

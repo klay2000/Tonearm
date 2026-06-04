@@ -1,7 +1,7 @@
 import { get } from 'svelte/store'
 import { auth } from '../stores/auth.js'
 
-const API_META = { v: '1.16.0', c: 'aesthetic-client', f: 'json' }
+const API_META = { v: '1.16.0', c: 'tonearm', f: 'json' }
 
 function credentials() {
   const a = get(auth)
