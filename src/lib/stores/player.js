@@ -1,4 +1,5 @@
 import { writable, derived, get } from 'svelte/store'
+import { auth } from './auth.js'
 
 export const queue = writable([])
 export const queueIndex = writable(-1)
@@ -113,3 +114,48 @@ export function removeFromQueue(index) {
   if (index < i) queueIndex.set(i - 1)
   else if (index === i) queueIndex.set(Math.min(i, get(queue).length - 1))
 }
+
+// Session persistence — saved per account, restored on login
+function playerKey(username) {
+  return `tonearm_${username}_player`
+}
+
+function savePlayerState() {
+  const a = get(auth)
+  if (!a?.username) return
+  try {
+    localStorage.setItem(playerKey(a.username), JSON.stringify({
+      queue: get(queue),
+      queueIndex: get(queueIndex),
+      volume: get(volume),
+      shuffle: get(shuffle),
+      repeat: get(repeat),
+    }))
+  } catch {}
+}
+
+let _saveTimer = null
+function scheduleSave() {
+  clearTimeout(_saveTimer)
+  _saveTimer = setTimeout(savePlayerState, 500)
+}
+
+auth.subscribe($auth => {
+  if (!$auth?.username) return
+  try {
+    const raw = localStorage.getItem(playerKey($auth.username))
+    if (!raw) return
+    const s = JSON.parse(raw)
+    if (Array.isArray(s.queue) && s.queue.length) queue.set(s.queue)
+    if (typeof s.queueIndex === 'number') queueIndex.set(s.queueIndex)
+    if (typeof s.volume === 'number') volume.set(s.volume)
+    if (typeof s.shuffle === 'boolean') shuffle.set(s.shuffle)
+    if (s.repeat === 'off' || s.repeat === 'all' || s.repeat === 'one') repeat.set(s.repeat)
+  } catch {}
+})
+
+queue.subscribe(scheduleSave)
+queueIndex.subscribe(scheduleSave)
+volume.subscribe(scheduleSave)
+shuffle.subscribe(scheduleSave)
+repeat.subscribe(scheduleSave)
