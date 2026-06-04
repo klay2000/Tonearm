@@ -4,6 +4,8 @@
 
   let audio = $state(null)
   let showQueue = $state(false)
+  let scrubbing = $state(false)
+  let scrubRatio = $state(0)
 
   // React to track changes — guard src assignment so queue mutations
   // (enqueue, insertNext, reorder) don't reset the current track
@@ -42,11 +44,28 @@
     }
   }
 
-  function seek(e) {
-    if (!audio || !$duration) return
+  function getRatio(e) {
     const rect = e.currentTarget.getBoundingClientRect()
-    const ratio = (e.clientX - rect.left) / rect.width
-    audio.currentTime = ratio * $duration
+    return Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
+  }
+
+  function onScrubStart(e) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    scrubbing = true
+    scrubRatio = getRatio(e)
+  }
+
+  function onScrubMove(e) {
+    if (!scrubbing) return
+    scrubRatio = getRatio(e)
+  }
+
+  function onScrubEnd() {
+    if (!scrubbing) return
+    const target = scrubRatio * $duration
+    currentTime.set(target)
+    scrubbing = false
+    if (audio && $duration) audio.currentTime = target
   }
 
   function onVolumeChange(e) {
@@ -61,7 +80,7 @@
     return `${m}:${s}`
   }
 
-  let progress = $derived($duration ? ($currentTime / $duration) * 100 : 0)
+  let progress = $derived(scrubbing ? scrubRatio * 100 : ($duration ? ($currentTime / $duration) * 100 : 0))
 
   // Queue drag-to-reorder
   let dragFrom = $state(null)
@@ -214,9 +233,20 @@
   </div>
 
   <div class="right">
-    <div class="time">{fmt($currentTime)} / {fmt($duration)}</div>
-    <button class="progress-track" onclick={seek} aria-label="Seek">
-      <div class="progress-fill" style="width: {progress}%"></div>
+    <div class="time">{fmt(scrubbing ? scrubRatio * $duration : $currentTime)} / {fmt($duration)}</div>
+    <button
+      class="progress-track"
+      class:scrubbing
+      onpointerdown={onScrubStart}
+      onpointermove={onScrubMove}
+      onpointerup={onScrubEnd}
+      onpointercancel={onScrubEnd}
+      aria-label="Seek"
+    >
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {progress}%"></div>
+      </div>
+      <div class="progress-thumb" style="left: {progress}%"></div>
     </button>
     <input
       class="volume"
@@ -331,11 +361,23 @@
   .progress-track {
     flex: 1;
     max-width: 200px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
+    height: 20px;
+    background: transparent;
     cursor: pointer;
     position: relative;
+    touch-action: none;
+  }
+  .progress-track.scrubbing { cursor: ew-resize; }
+  .progress-bar {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 4px;
+    margin-top: -2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    pointer-events: none;
   }
   .progress-fill {
     height: 100%;
@@ -343,6 +385,20 @@
     border-radius: 2px;
     pointer-events: none;
   }
+  .progress-thumb {
+    position: absolute;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .progress-track:hover .progress-thumb,
+  .progress-track.scrubbing .progress-thumb { opacity: 1; }
   .volume {
     width: 72px;
     appearance: none;
