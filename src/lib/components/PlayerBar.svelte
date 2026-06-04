@@ -5,6 +5,7 @@
   let audio = $state(null)
   let showQueue = $state(false)
   let scrubbing = $state(false)
+  let scrubRatio = $state(0)
 
   // React to track changes — guard src assignment so queue mutations
   // (enqueue, insertNext, reorder) don't reset the current track
@@ -43,25 +44,26 @@
     }
   }
 
-  function seek(e) {
-    if (!audio || !$duration) return
+  function getRatio(e) {
     const rect = e.currentTarget.getBoundingClientRect()
-    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
-    audio.currentTime = ratio * $duration
+    return Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
   }
 
   function onScrubStart(e) {
     e.currentTarget.setPointerCapture(e.pointerId)
     scrubbing = true
-    seek(e)
+    scrubRatio = getRatio(e)
   }
 
   function onScrubMove(e) {
-    if (scrubbing) seek(e)
+    if (!scrubbing) return
+    scrubRatio = getRatio(e)
   }
 
   function onScrubEnd() {
+    if (!scrubbing) return
     scrubbing = false
+    if (audio && $duration) audio.currentTime = scrubRatio * $duration
   }
 
   function onVolumeChange(e) {
@@ -76,7 +78,7 @@
     return `${m}:${s}`
   }
 
-  let progress = $derived($duration ? ($currentTime / $duration) * 100 : 0)
+  let progress = $derived(scrubbing ? scrubRatio * 100 : ($duration ? ($currentTime / $duration) * 100 : 0))
 
   // Queue drag-to-reorder
   let dragFrom = $state(null)
@@ -229,7 +231,7 @@
   </div>
 
   <div class="right">
-    <div class="time">{fmt($currentTime)} / {fmt($duration)}</div>
+    <div class="time">{fmt(scrubbing ? scrubRatio * $duration : $currentTime)} / {fmt($duration)}</div>
     <button
       class="progress-track"
       class:scrubbing
