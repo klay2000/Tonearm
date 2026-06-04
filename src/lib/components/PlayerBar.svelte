@@ -4,6 +4,7 @@
 
   let audio = $state(null)
   let showQueue = $state(false)
+  let scrubbing = $state(false)
 
   // React to track changes — guard src assignment so queue mutations
   // (enqueue, insertNext, reorder) don't reset the current track
@@ -45,8 +46,22 @@
   function seek(e) {
     if (!audio || !$duration) return
     const rect = e.currentTarget.getBoundingClientRect()
-    const ratio = (e.clientX - rect.left) / rect.width
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
     audio.currentTime = ratio * $duration
+  }
+
+  function onScrubStart(e) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    scrubbing = true
+    seek(e)
+  }
+
+  function onScrubMove(e) {
+    if (scrubbing) seek(e)
+  }
+
+  function onScrubEnd() {
+    scrubbing = false
   }
 
   function onVolumeChange(e) {
@@ -215,8 +230,17 @@
 
   <div class="right">
     <div class="time">{fmt($currentTime)} / {fmt($duration)}</div>
-    <button class="progress-track" onclick={seek} aria-label="Seek">
+    <button
+      class="progress-track"
+      class:scrubbing
+      onpointerdown={onScrubStart}
+      onpointermove={onScrubMove}
+      onpointerup={onScrubEnd}
+      onpointercancel={onScrubEnd}
+      aria-label="Seek"
+    >
       <div class="progress-fill" style="width: {progress}%"></div>
+      <div class="progress-thumb" style="left: {progress}%"></div>
     </button>
     <input
       class="volume"
@@ -336,13 +360,29 @@
     border-radius: 2px;
     cursor: pointer;
     position: relative;
+    touch-action: none;
   }
+  .progress-track.scrubbing { cursor: ew-resize; }
   .progress-fill {
     height: 100%;
     background: var(--accent);
     border-radius: 2px;
     pointer-events: none;
   }
+  .progress-thumb {
+    position: absolute;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .progress-track:hover .progress-thumb,
+  .progress-track.scrubbing .progress-thumb { opacity: 1; }
   .volume {
     width: 72px;
     appearance: none;
