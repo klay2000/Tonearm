@@ -109,11 +109,7 @@
     gap: 8px;
   }
   .album-card :global(.cover-art) {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
     border-radius: 6px;
-    background: var(--border);
   }
   .album-card:hover :global(.cover-art) { opacity: 0.85; }
   .album-info { display: flex; flex-direction: column; gap: 2px; }

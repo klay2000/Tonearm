@@ -98,9 +98,8 @@
     overflow: hidden;
   }
   .cover :global(.cover-art) {
-    width: 100%;
+    padding-top: 0;
     height: 100%;
-    object-fit: cover;
   }
   .meta {
     display: flex;

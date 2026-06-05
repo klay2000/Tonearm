@@ -109,7 +109,7 @@
     border-radius: 6px;
   }
   .album-row:hover { background: var(--surface); }
-  .album-row :global(.cover-art) { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; background: var(--border); }
+  .album-row :global(.cover-art) { width: 40px; height: 40px; padding-top: 0; border-radius: 4px; }
   .row-title { font-weight: 500; }
   .row-sub { font-size: 12px; color: var(--text-muted); }
 

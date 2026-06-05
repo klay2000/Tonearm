@@ -41,14 +41,14 @@
     }
   }
 
-  let { id, artist = '', album = '', size = 256, alt = '', class: className = '' } = $props()
+  let { id, artist = '', album = '', size = 256, alt = '' } = $props()
 
   let scrapedSrc = $state(null)
   let failed = $state(false)
   let triggered = false
 
   async function onServerError() {
-    if (triggered || !artist || !album) { failed = !artist || !album; return }
+    if (triggered || !artist || !album) { failed = true; return }
     triggered = true
     const url = await fetchAlbumArt(artist, album)
     if (url) scrapedSrc = url
@@ -62,17 +62,33 @@
 </script>
 
 {#if failed}
-  <div class={['cover-art', className].filter(Boolean).join(' ')} style="width:{size}px;height:{size}px" role="img" aria-label={alt}></div>
-{:else if scrapedSrc}
-  <img class={['cover-art', className].filter(Boolean).join(' ')} src={scrapedSrc} {alt} width={size} height={size} onerror={onScrapedError} />
+  <div class="cover-art" role="img" aria-label={alt}></div>
 {:else}
-  <img class={['cover-art', className].filter(Boolean).join(' ')} src={coverUrl(id, size)} {alt} width={size} height={size} onerror={onServerError} />
+  <div class="cover-art">
+    <img
+      src={scrapedSrc ?? coverUrl(id, size)}
+      {alt}
+      onerror={scrapedSrc ? onScrapedError : onServerError}
+    />
+  </div>
 {/if}
 
 <style>
   .cover-art {
     display: block;
+    position: relative;
+    width: 100%;
+    padding-top: 100%;
+    overflow: hidden;
     background: var(--border);
     flex-shrink: 0;
+  }
+  .cover-art img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 </style>
