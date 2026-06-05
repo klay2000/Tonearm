@@ -57,6 +57,14 @@
   </section>
 
   <section>
+    <h2>About</h2>
+    <div class="field">
+      <span class="label">Build</span>
+      <span class="value mono">{__GIT_BRANCH__} @ {__GIT_HASH__}</span>
+    </div>
+  </section>
+
+  <section>
     <h2>Server</h2>
     <div class="field">
       <span class="label">Connected to</span>
@@ -100,6 +108,7 @@
     flex-shrink: 0;
   }
   .value { font-size: 13px; }
+  .mono { font-family: monospace; font-size: 12px; color: var(--text-muted); }
 
   .options { display: flex; gap: 8px; flex-wrap: wrap; }
   .option {
