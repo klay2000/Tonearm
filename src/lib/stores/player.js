@@ -115,6 +115,18 @@ export function removeFromQueue(index) {
   else if (index === i) queueIndex.set(Math.min(i, get(queue).length - 1))
 }
 
+export function clearQueue() {
+  const i = get(queueIndex)
+  const q = get(queue)
+  if (i >= 0 && q[i]) {
+    queue.set([q[i]])
+    queueIndex.set(0)
+  } else {
+    queue.set([])
+    queueIndex.set(-1)
+  }
+}
+
 // Session persistence — saved per account, restored on login
 function playerKey(username) {
   return `tonearm_${username}_player`

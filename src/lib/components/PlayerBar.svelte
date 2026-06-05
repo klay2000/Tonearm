@@ -1,5 +1,5 @@
 <script>
-  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, shuffle, repeat, toggleShuffle, cycleRepeat } from '../stores/player.js'
+  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat } from '../stores/player.js'
   import { coverUrl, streamUrl } from '../api/subsonic.js'
 
   let audio = $state(null)
@@ -156,6 +156,9 @@
         </div>
       {/each}
     </div>
+    {#if $queue.length > 1}
+      <button class="queue-clear" onclick={clearQueue} aria-label="Clear queue">Clear</button>
+    {/if}
   </div>
 {/if}
 
@@ -461,6 +464,20 @@
   .queue-title { font-weight: 600; font-size: 13px; }
   .queue-header button { opacity: 0.5; font-size: 13px; }
   .queue-header button:hover { opacity: 1; }
+  .queue-clear {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    padding: 5px 10px;
+    font-size: 11px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-muted);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    opacity: 0.85;
+  }
+  .queue-clear:hover { opacity: 1; color: var(--text); }
   .queue-list { overflow-y: auto; flex: 1; padding: 4px 0; }
   .queue-item {
     display: flex;
