@@ -1,5 +1,6 @@
 <script>
-  import { getAlbumList, getAllAlbums, getAlbum, coverUrl } from '../lib/api/subsonic.js'
+  import { getAlbumList, getAllAlbums, getAlbum } from '../lib/api/subsonic.js'
+  import CoverArt from '../lib/components/CoverArt.svelte'
   import { playQueue } from '../lib/stores/player.js'
 
   const greetings = [
@@ -66,7 +67,7 @@
       <div class="shelf">
         {#each recent as album}
           <a class="album-card" href="#/album/{album.id}">
-            <img src={coverUrl(album.id)} alt={album.name} />
+            <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
             <span class="title">{album.name}</span>
             <span class="artist">{album.artist}</span>
           </a>
@@ -81,7 +82,7 @@
       <div class="shelf">
         {#each random as album}
           <a class="album-card" href="#/album/{album.id}">
-            <img src={coverUrl(album.id)} alt={album.name} />
+            <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
             <span class="title">{album.name}</span>
             <span class="artist">{album.artist}</span>
           </a>
@@ -154,7 +155,7 @@
     gap: 6px;
   }
 
-  .album-card img {
+  .album-card :global(.cover-art) {
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
@@ -162,7 +163,7 @@
     background: var(--border);
     transition: opacity 0.15s;
   }
-  .album-card:hover img { opacity: 0.8; }
+  .album-card:hover :global(.cover-art) { opacity: 0.8; }
 
   .title {
     font-size: 13px;

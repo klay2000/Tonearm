@@ -1,5 +1,6 @@
 <script>
-  import { search, coverUrl } from '../lib/api/subsonic.js'
+  import { search } from '../lib/api/subsonic.js'
+  import CoverArt from '../lib/components/CoverArt.svelte'
   import { playQueue, insertNext, enqueue } from '../lib/stores/player.js'
 
   let { query } = $props()
@@ -41,7 +42,7 @@
       <div class="album-rows">
         {#each results.album as al}
           <a class="album-row" href="#/album/{al.id}">
-            <img src={coverUrl(al.id, 48)} alt="" />
+            <CoverArt id={al.id} artist={al.artist} album={al.name} size={48} />
             <div>
               <div class="row-title">{al.name}</div>
               <div class="row-sub">{al.artist}</div>
@@ -108,7 +109,7 @@
     border-radius: 6px;
   }
   .album-row:hover { background: var(--surface); }
-  .album-row img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; background: var(--border); }
+  .album-row :global(.cover-art) { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; background: var(--border); }
   .row-title { font-weight: 500; }
   .row-sub { font-size: 12px; color: var(--text-muted); }
 

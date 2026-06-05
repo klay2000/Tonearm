@@ -1,5 +1,6 @@
 <script>
-  import { getArtist, getAlbum, coverUrl } from '../lib/api/subsonic.js'
+  import { getArtist, getAlbum } from '../lib/api/subsonic.js'
+  import CoverArt from '../lib/components/CoverArt.svelte'
   import { playQueue } from '../lib/stores/player.js'
   import ArtistAvatar from '../lib/components/ArtistAvatar.svelte'
 
@@ -60,7 +61,7 @@
   <div class="album-grid">
     {#each artist.album ?? [] as album}
       <a class="album-card" href="#/album/{album.id}">
-        <img src={coverUrl(album.id)} alt={album.name} />
+        <CoverArt id={album.id} artist={artist.name} album={album.name} alt={album.name} />
         <div class="album-info">
           <span class="album-title">{album.name}</span>
           {#if album.year}<span class="album-year">{album.year}</span>{/if}
@@ -107,14 +108,14 @@
     flex-direction: column;
     gap: 8px;
   }
-  .album-card img {
+  .album-card :global(.cover-art) {
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
     border-radius: 6px;
     background: var(--border);
   }
-  .album-card:hover img { opacity: 0.85; }
+  .album-card:hover :global(.cover-art) { opacity: 0.85; }
   .album-info { display: flex; flex-direction: column; gap: 2px; }
   .album-title { font-weight: 500; font-size: 13px; line-height: 1.3; }
   .album-year { font-size: 12px; color: var(--text-muted); }
