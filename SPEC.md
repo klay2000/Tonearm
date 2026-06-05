@@ -23,6 +23,7 @@ A minimal, modern, self-hosted music client for a Gonic/Subsonic server. Built a
 | Routing | Hash-based (custom) | No deps, works as static file with no server config |
 | API layer | Subsonic REST API (JSON) | Gonic fully supports it |
 | Artist images | TheAudioDB → Wikidata/Wikimedia | TheAudioDB by name first (fast, parallel); MusicBrainz+Wikidata fallback |
+| Album art | Server → TheAudioDB → Cover Art Archive | Falls back to scraping when server has no art |
 | Desktop wrapper (planned) | Tauri v2 | Rust-based, AppImage support, official mobile target |
 
 ---
@@ -49,7 +50,8 @@ subsonic-client/
     │       ├── Header.svelte
     │       ├── Sidebar.svelte
     │       ├── PlayerBar.svelte
-    │       └── ArtistAvatar.svelte
+    │       ├── ArtistAvatar.svelte
+    │       └── CoverArt.svelte
     └── routes/
         ├── Home.svelte        # greeting + recently added + discover shelves
         ├── Artists.svelte     # A–Z indexed list with avatars
@@ -130,13 +132,13 @@ Collaboration artist names (`feat.`, `ft.`, `&`) are stripped to the primary art
 │        │   Search:  grouped results         │
 │        │   Settings: appearance + playback  │
 ├────────┴────────────────────────────────────┤
-│ [art]  Track · Artist  ⇄ |◀  ▶  ▐▐  ▷  ↺  ═══  🔊  ≡ │
+│ [art]  Track · Artist  ⇄ |◀  ▶  ▐▐  ▷  ↺  ═══  🔇  ──  ≡ │
 └─────────────────────────────────────────────┘
 ```
 
 **Keyboard shortcuts**: `Space` play/pause · `→` next · `←` prev · `m` mute
 
-**Player bar controls**: shuffle (⇄) · prev · play/pause · next · repeat (↺, cycles off/all/one) · seek bar · volume · queue toggle
+**Player bar controls**: shuffle (⇄) · prev · play/pause · next · repeat (↺, cycles off/all/one) · seek bar · mute toggle · volume slider · queue toggle
 
 ---
 
@@ -164,15 +166,20 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Home page: randomised greeting + recently added + discover shelves
 - [x] Search: grouped results with click-through
 - [x] Playback: streaming, queue, play/pause/prev/next, seek, volume
-- [x] Queue: view, reorder (drag), remove, click-to-play, play next / add to queue
+- [x] Mute toggle with dynamic volume icon (preserves volume level)
+- [x] Queue: view, reorder (drag), remove, clear, click-to-play, play next / add to queue
 - [x] Shuffle: random-next mode or reorder-queue mode (configurable in Settings)
 - [x] Repeat: off / repeat-all / repeat-one
 - [x] Play artist / shuffle artist: fetches all albums in parallel and queues tracks
+- [x] Play / shuffle entire library
+- [x] Album art scraping: TheAudioDB → MusicBrainz → Cover Art Archive fallback
 - [x] Artist avatars: lazy-loaded with TheAudioDB/Wikidata/initials fallback
 - [x] Dark/light mode toggle + auto theme by sunrise/sunset
 - [x] Login screen with server URL + credentials
-- [x] Settings screen: theme preference, shuffle mode
+- [x] Player state (queue, volume, shuffle, repeat) persisted per account in localStorage
+- [x] Settings screen: theme preference, shuffle mode, build info (branch + commit)
 - [x] Keyboard shortcuts
+- [x] App name: Tonearm
 
 ## Roadmap
 
@@ -181,8 +188,6 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 | [#1](https://github.com/klay2000/subsonic-client/issues/1) | ListenBrainz integration | open |
 | [#2](https://github.com/klay2000/subsonic-client/issues/2) | Music ingestion + library management | open |
 | [#6](https://github.com/klay2000/subsonic-client/issues/6) | Notifications | open |
-| [#8](https://github.com/klay2000/subsonic-client/issues/8) | Image scraping | open |
 | [#9](https://github.com/klay2000/subsonic-client/issues/9) | Desktop app (Tauri v2 AppImage) | open |
 | [#10](https://github.com/klay2000/subsonic-client/issues/10) | Mobile app | open |
-| [#11](https://github.com/klay2000/subsonic-client/issues/11) | Choose app name + update branding | open |
-| [#14](https://github.com/klay2000/subsonic-client/issues/14) | Play / shuffle library | open |
+| [#25](https://github.com/klay2000/subsonic-client/issues/25) | Reposition playback scrubber | open |
