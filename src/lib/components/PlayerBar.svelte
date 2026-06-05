@@ -1,5 +1,5 @@
 <script>
-  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, shuffle, repeat, toggleShuffle, cycleRepeat } from '../stores/player.js'
+  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat } from '../stores/player.js'
   import { coverUrl, streamUrl } from '../api/subsonic.js'
 
   let audio = $state(null)
@@ -127,6 +127,7 @@
   <div class="queue-panel">
     <div class="queue-header">
       <span class="queue-title">Queue</span>
+      <button onclick={clearQueue} aria-label="Clear queue">Clear</button>
       <button onclick={() => showQueue = false} aria-label="Close queue">✕</button>
     </div>
     <div class="queue-list">
