@@ -1,5 +1,6 @@
 <script>
-  import { getAlbum, coverUrl } from '../lib/api/subsonic.js'
+  import { getAlbum } from '../lib/api/subsonic.js'
+  import CoverArt from '../lib/components/CoverArt.svelte'
   import { playQueue, currentTrack, playing, insertNext, enqueue } from '../lib/stores/player.js'
 
   let { id } = $props()
@@ -37,7 +38,9 @@
   <p class="error">Error: {error}</p>
 {:else if album}
   <div class="album-header">
-    <img class="cover" src={coverUrl(album.id, 200)} alt={album.name} />
+    <div class="cover">
+      <CoverArt id={album.id} artist={album.artist} album={album.name} size={200} alt={album.name} />
+    </div>
     <div class="meta">
       <h1>{album.name}</h1>
       <a class="artist-link" href="#/artist/{album.artistId}">{album.artist}</a>
@@ -89,10 +92,14 @@
   .cover {
     width: 180px;
     height: 180px;
-    object-fit: cover;
     border-radius: 8px;
     background: var(--border);
     flex-shrink: 0;
+    overflow: hidden;
+  }
+  .cover :global(.cover-art) {
+    padding-top: 0;
+    height: 100%;
   }
   .meta {
     display: flex;
