@@ -68,9 +68,17 @@
     if (audio && $duration) audio.currentTime = target
   }
 
+  let muted = $state(false)
+
+  function toggleMute() {
+    muted = !muted
+    if (audio) audio.muted = muted
+  }
+
   function onVolumeChange(e) {
     volume.set(Number(e.target.value))
     if (audio) audio.volume = Number(e.target.value)
+    if (muted) { muted = false; if (audio) audio.muted = false }
   }
 
   function fmt(secs) {
@@ -251,6 +259,26 @@
       </div>
       <div class="progress-thumb" style="left: {progress}%"></div>
     </button>
+    <button class="mute-btn" onclick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'}>
+      {#if muted || $volume === 0}
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M9 2L5 6H2v4h3l4 4V2z" opacity="0.4"/>
+          <line x1="11" y1="6" x2="15" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="15" y1="6" x2="11" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      {:else if $volume < 0.5}
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M9 2L5 6H2v4h3l4 4V2z"/>
+          <path d="M11.5 6.5a3 3 0 0 1 0 3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      {:else}
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M9 2L5 6H2v4h3l4 4V2z"/>
+          <path d="M11.5 5a5 5 0 0 1 0 6" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <path d="M13.5 3.5a8 8 0 0 1 0 9" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        </svg>
+      {/if}
+    </button>
     <input
       class="volume"
       type="range"
@@ -258,7 +286,7 @@
       value={$volume}
       oninput={onVolumeChange}
       aria-label="Volume"
-      style="background: linear-gradient(to right, var(--accent) {$volume * 100}%, var(--border) {$volume * 100}%)"
+      style="background: linear-gradient(to right, {muted ? 'var(--border)' : 'var(--accent)'} {$volume * 100}%, var(--border) {$volume * 100}%)"
     />
     <button
       class="queue-btn"
@@ -402,6 +430,13 @@
   }
   .progress-track:hover .progress-thumb,
   .progress-track.scrubbing .progress-thumb { opacity: 1; }
+  .mute-btn {
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+  }
+  .mute-btn:hover { opacity: 1; }
   .volume {
     width: 72px;
     appearance: none;
