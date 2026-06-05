@@ -1,4 +1,4 @@
-# aesthetic
+# Tonearm
 
 A minimal, modern, self-hosted music client for [Gonic](https://github.com/sentriz/gonic) / Subsonic servers.
 
@@ -7,12 +7,15 @@ A minimal, modern, self-hosted music client for [Gonic](https://github.com/sentr
 - Browse artists, albums, and tracks
 - Search across your library
 - Streaming playback with queue, seek, and volume control
+- Mute toggle with dynamic volume icon
 - Shuffle (random-next or reorder-queue) and repeat (off / all / one)
 - Play or shuffle an entire artist's discography in one click
-- Queue management: reorder by drag, remove tracks, play next
+- Queue management: reorder by drag, remove tracks, clear queue, play next
+- Album art scraping from TheAudioDB and Cover Art Archive when server has none
 - Artist avatars sourced from TheAudioDB and Wikimedia
 - Auto dark/light theme by sunrise/sunset (or set manually)
-- Settings screen: theme preference, shuffle mode
+- Player state (queue, volume, shuffle, repeat) persisted across sessions
+- Settings screen: theme preference, shuffle mode, build info
 - Keyboard shortcuts: `Space` play/pause · `→` next · `←` prev · `m` mute
 
 ## Stack
@@ -49,7 +52,7 @@ server {
     location /api/mb/ {
         proxy_pass https://musicbrainz.org/ws/2/;
         proxy_set_header Host musicbrainz.org;
-        proxy_set_header User-Agent "aesthetic-client/0.1 (local)";
+        proxy_set_header User-Agent "tonearm/0.1 (local)";
         proxy_ssl_server_name on;
         resolver 1.1.1.1;
     }
