@@ -1,8 +1,25 @@
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { execSync } from 'child_process'
+
+function gitInfo() {
+  try {
+    const hash = execSync('git rev-parse --short HEAD').toString().trim()
+    const branch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim()
+    return { hash, branch }
+  } catch {
+    return { hash: 'unknown', branch: 'unknown' }
+  }
+}
+
+const { hash, branch } = gitInfo()
 
 export default defineConfig({
   plugins: [svelte()],
+  define: {
+    __GIT_HASH__: JSON.stringify(hash),
+    __GIT_BRANCH__: JSON.stringify(branch),
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,
