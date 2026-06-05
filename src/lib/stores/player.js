@@ -116,8 +116,15 @@ export function removeFromQueue(index) {
 }
 
 export function clearQueue() {
-  queue.set([])
-  queueIndex.set(-1)
+  const i = get(queueIndex)
+  const q = get(queue)
+  if (i >= 0 && q[i]) {
+    queue.set([q[i]])
+    queueIndex.set(0)
+  } else {
+    queue.set([])
+    queueIndex.set(-1)
+  }
 }
 
 // Session persistence — saved per account, restored on login
