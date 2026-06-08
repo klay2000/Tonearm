@@ -1,7 +1,7 @@
 # Subsonic Client — Specification
 
-**Version**: 0.4
-**Date**: 2026-06-07
+**Version**: 0.5
+**Date**: 2026-06-08
 **Server**: Gonic at `http://10.0.0.10:4747`
 **Web host**: `http://192.168.122.79` (dev VM)
 
@@ -37,6 +37,8 @@ subsonic-client/
 ├── package.json
 ├── vite.config.js
 ├── index.html
+├── Dockerfile              # multi-stage build: Vite build → nginx:alpine
+├── nginx.conf              # serves dist/ + proxies MusicBrainz
 ├── src-tauri/              # Tauri v2 desktop wrapper (builds Tonearm AppImage)
 │   ├── Cargo.toml
 │   ├── tauri.conf.json
@@ -46,41 +48,65 @@ subsonic-client/
     ├── App.svelte              # shell, routing, keyboard shortcuts
     ├── lib/
     │   ├── api/
-    │   │   └── subsonic.js    # Subsonic API client
+    │   │   ├── subsonic.js     # Subsonic API client
+    │   │   └── musicbrainz.js  # MusicBrainz lookups (artist image fallback)
     │   ├── stores/
+    │   │   ├── auth.js        # login state + credentials (localStorage)
     │   │   ├── player.js      # queue, playback state, volume
-    │   │   └── router.js      # hash-based router
+    │   │   ├── router.js      # hash-based router
+    │   │   ├── theme.js       # dark/light/auto theme
+    │   │   └── sunTimes.js    # pure sunrise/sunset helpers (+ sunTimes.test.js)
     │   └── components/
     │       ├── Header.svelte
     │       ├── Sidebar.svelte
     │       ├── PlayerBar.svelte
     │       ├── ArtistAvatar.svelte
-    │       └── CoverArt.svelte
+    │       ├── CoverArt.svelte
+    │       └── LoadingScreen.svelte
     └── routes/
         ├── Home.svelte        # greeting + recently added + discover shelves
         ├── Artists.svelte     # A–Z indexed list with avatars
         ├── Artist.svelte      # album grid for one artist
         ├── Album.svelte       # track list, play all
-        └── Search.svelte      # grouped results: artists / albums / songs
+        ├── Search.svelte      # grouped results: artists / albums / songs
+        ├── Login.svelte       # server URL + credentials
+        └── Settings.svelte    # theme preference, shuffle mode, build info
 ```
 
 ---
 
 ## nginx Config
 
-The dev VM runs nginx serving `dist/` on port 80. nginx also proxies MusicBrainz to work around their browser User-Agent block:
+The dev VM runs nginx serving `dist/` on port 80 (config at `/etc/nginx/sites-available/subsonic-client`). The same proxy rules ship as `nginx.conf` at the repo root, used by the Docker image:
 
 ```nginx
 location /api/mb/ {
     proxy_pass https://musicbrainz.org/ws/2/;
     proxy_set_header Host musicbrainz.org;
-    proxy_set_header User-Agent "aesthetic-client/0.1 (local)";
+    proxy_set_header User-Agent "tonearm/0.1 (local)";
     proxy_ssl_server_name on;
     resolver 1.1.1.1;
 }
 ```
 
-Config at `/etc/nginx/sites-available/subsonic-client`.
+This works around MusicBrainz's browser User-Agent block — required for the artist-image fallback pipeline below.
+
+---
+
+## Docker
+
+`Dockerfile` is a multi-stage build: a Node stage runs `npm run build`, then `nginx:alpine` serves `dist/` using `nginx.conf` (which bundles the MusicBrainz proxy above, so the container is self-sufficient — no external reverse proxy needed):
+
+```bash
+docker build -t tonearm .
+docker run -d -p 8080:80 tonearm
+```
+
+---
+
+## Testing
+
+`npm test` runs `src/**/*.test.js` with Node's built-in test runner (`node --test`) — no extra dependency. Tests live alongside the modules they cover (e.g. `src/lib/stores/sunTimes.test.js`); favor extracting pure logic into DOM-free modules so it can be tested this way.
 
 ---
 
@@ -185,6 +211,8 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Keyboard shortcuts
 - [x] App name: Tonearm
 - [x] Desktop app: Tauri v2 wrapper, builds as a Linux AppImage
+- [x] Docker image (multi-stage build, bundled nginx + MusicBrainz proxy)
+- [x] Regression tests for auto theme sunrise/sunset logic (`npm test`)
 
 ## Roadmap
 
@@ -194,4 +222,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 | [#2](https://github.com/klay2000/subsonic-client/issues/2) | Music ingestion + library management | open |
 | [#6](https://github.com/klay2000/subsonic-client/issues/6) | Notifications | open |
 | [#10](https://github.com/klay2000/subsonic-client/issues/10) | Mobile app | open |
-| [#25](https://github.com/klay2000/subsonic-client/issues/25) | Reposition playback scrubber | open |
+| [#32](https://github.com/klay2000/subsonic-client/issues/32) | Broader test coverage | open |
+| [#33](https://github.com/klay2000/subsonic-client/issues/33) | CI/CD | open |
+| [#41](https://github.com/klay2000/subsonic-client/issues/41) | Logo | open |
+| [#42](https://github.com/klay2000/subsonic-client/issues/42) | Revamp login screen | open |

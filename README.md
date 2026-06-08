@@ -40,6 +40,21 @@ npm run build     # outputs dist/
 
 Serve `dist/` as static files. The app talks directly to your Gonic server from the browser — no backend needed.
 
+## Docker
+
+A `Dockerfile` and `nginx.conf` are included for hosting the built app behind nginx, MusicBrainz proxy and all (see [nginx](#nginx) below):
+
+```bash
+docker build -t tonearm .
+docker run -d -p 8080:80 tonearm   # → http://localhost:8080
+```
+
+## Testing
+
+```bash
+npm test          # runs src/**/*.test.js with Node's built-in test runner
+```
+
 ## Desktop app (Tauri)
 
 The `src-tauri/` directory wraps the web app as a native Linux desktop app ("Tonearm") using Tauri v2, bundled as an AppImage.
@@ -64,7 +79,7 @@ WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_
 
 ### nginx
 
-The included nginx config proxies MusicBrainz (required to work around their browser User-Agent restriction):
+`nginx.conf` (also used by the Docker image above) proxies MusicBrainz, required to work around their browser User-Agent restriction:
 
 ```nginx
 server {
