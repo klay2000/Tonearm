@@ -82,6 +82,11 @@ Hash-based (`#/path`). Routes are matched in `App.svelte`'s `route()` function. 
 - Run `npm run build` successfully before every commit — do not commit a broken build.
 - Conventional commit prefixes (`feat:`, `fix:`, `docs:`) are preferred. Include the issue number when relevant, e.g. `feat: shuffle controls (#12)`.
 
+**Testing**
+- Don't drive the app yourself as a substitute for the user's review (launching it, clicking through screens, taking screenshots, etc.). A passing build/typecheck shows the code compiles, not that the feature is right — that judgment belongs to the user.
+- Keep a human in the loop: when a change is ready to be exercised, hand it to the user (open the PR, describe what changed and how to try it) rather than autonomously confirming it "works."
+- Exception: quick, narrowly-scoped checks needed to debug your own change while coding (e.g. confirming a build error is fixed) are fine — the line is autonomously *validating the feature* end-to-end on the user's behalf.
+
 **Pull requests**
 - Open a PR when the work is ready to test.
 - Send a push notification and ask the user if they'd like to test it.
