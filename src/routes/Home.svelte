@@ -22,11 +22,13 @@
 
   let recent = $state([])
   let random = $state([])
+  let loadingRecent = $state(true)
+  let loadingRandom = $state(true)
   let loadingLibrary = $state(false)
 
   $effect(() => {
-    getAlbumList('newest').then(d => recent = d)
-    getAlbumList('random').then(d => random = d)
+    getAlbumList('newest').then(d => recent = d).finally(() => loadingRecent = false)
+    getAlbumList('random').then(d => random = d).finally(() => loadingRandom = false)
   })
 
   async function playLibrary(shuffled) {
@@ -61,37 +63,57 @@
     </div>
   </div>
 
-  {#if recent.length}
+  {#if loadingRecent || recent.length}
     <section>
-      <h2>Recently Added</h2>
+      <h2>Recently Added{#if loadingRecent}<span class="spinner-sm" aria-hidden="true"></span>{/if}</h2>
       <div class="shelf">
-        {#each recent as album}
-          <a class="album-card" href="#/album/{album.id}">
-            <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
-            <span class="title">{album.name}</span>
-            <span class="artist">{album.artist}</span>
-          </a>
-        {/each}
+        {#if loadingRecent}
+          {#each { length: 8 } as _}
+            <div class="album-card skeleton">
+              <div class="cover-skel"></div>
+              <div class="line-skel" style="width: 85%"></div>
+              <div class="line-skel" style="width: 55%"></div>
+            </div>
+          {/each}
+        {:else}
+          {#each recent as album}
+            <a class="album-card" href="#/album/{album.id}">
+              <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
+              <span class="title">{album.name}</span>
+              <span class="artist">{album.artist}</span>
+            </a>
+          {/each}
+        {/if}
       </div>
     </section>
   {/if}
 
-  {#if random.length}
+  {#if loadingRandom || random.length}
     <section>
-      <h2>Discover</h2>
+      <h2>Discover{#if loadingRandom}<span class="spinner-sm" aria-hidden="true"></span>{/if}</h2>
       <div class="shelf">
-        {#each random as album}
-          <a class="album-card" href="#/album/{album.id}">
-            <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
-            <span class="title">{album.name}</span>
-            <span class="artist">{album.artist}</span>
-          </a>
-        {/each}
+        {#if loadingRandom}
+          {#each { length: 8 } as _}
+            <div class="album-card skeleton">
+              <div class="cover-skel"></div>
+              <div class="line-skel" style="width: 85%"></div>
+              <div class="line-skel" style="width: 55%"></div>
+            </div>
+          {/each}
+        {:else}
+          {#each random as album}
+            <a class="album-card" href="#/album/{album.id}">
+              <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
+              <span class="title">{album.name}</span>
+              <span class="artist">{album.artist}</span>
+            </a>
+          {/each}
+        {/if}
       </div>
     </section>
   {/if}
 
-  {#if !recent.length && !random.length}
+  {#if !loadingRecent && !loadingRandom && !recent.length && !random.length}
     <p class="hint">Browse your <a href="#/artists">artists</a> or use the search bar above.</p>
   {/if}
 </div>
@@ -135,12 +157,37 @@
   section { margin-bottom: 36px; }
 
   h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
     color: var(--text-muted);
     margin-bottom: 14px;
+  }
+
+  .spinner-sm {
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .cover-skel, .line-skel {
+    border-radius: 6px;
+    background: var(--border);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .cover-skel { width: 100%; padding-top: 100%; }
+  .line-skel { height: 11px; border-radius: 4px; }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
   }
 
   .shelf {
