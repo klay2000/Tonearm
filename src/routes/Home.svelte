@@ -1,6 +1,7 @@
 <script>
   import { getAlbumList, getAllAlbums, getAlbum } from '../lib/api/subsonic.js'
   import CoverArt from '../lib/components/CoverArt.svelte'
+  import LoadingScreen from '../lib/components/LoadingScreen.svelte'
   import { playQueue } from '../lib/stores/player.js'
 
   const greetings = [
@@ -22,11 +23,14 @@
 
   let recent = $state([])
   let random = $state([])
+  let loadingShelves = $state(true)
   let loadingLibrary = $state(false)
 
   $effect(() => {
-    getAlbumList('newest').then(d => recent = d)
-    getAlbumList('random').then(d => random = d)
+    Promise.all([
+      getAlbumList('newest').then(d => recent = d),
+      getAlbumList('random').then(d => random = d),
+    ]).finally(() => loadingShelves = false)
   })
 
   async function playLibrary(shuffled) {
@@ -48,56 +52,64 @@
   }
 </script>
 
-<div class="home">
-  <div class="home-header">
-    <h1>{greeting}</h1>
-    <div class="library-actions">
-      <button class="play-lib" onclick={() => playLibrary(false)} disabled={loadingLibrary}>
-        ▶ Play library
-      </button>
-      <button class="shuffle-lib" onclick={() => playLibrary(true)} disabled={loadingLibrary}>
-        ⇄ Shuffle library
-      </button>
-    </div>
+{#if loadingShelves}
+  <div class="home-loading">
+    <LoadingScreen message="Loading your library…" />
   </div>
-
-  {#if recent.length}
-    <section>
-      <h2>Recently Added</h2>
-      <div class="shelf">
-        {#each recent as album}
-          <a class="album-card" href="#/album/{album.id}">
-            <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
-            <span class="title">{album.name}</span>
-            <span class="artist">{album.artist}</span>
-          </a>
-        {/each}
+{:else}
+  <div class="home">
+    <div class="home-header">
+      <h1>{greeting}</h1>
+      <div class="library-actions">
+        <button class="play-lib" onclick={() => playLibrary(false)} disabled={loadingLibrary}>
+          ▶ Play library
+        </button>
+        <button class="shuffle-lib" onclick={() => playLibrary(true)} disabled={loadingLibrary}>
+          ⇄ Shuffle library
+        </button>
       </div>
-    </section>
-  {/if}
+    </div>
 
-  {#if random.length}
-    <section>
-      <h2>Discover</h2>
-      <div class="shelf">
-        {#each random as album}
-          <a class="album-card" href="#/album/{album.id}">
-            <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
-            <span class="title">{album.name}</span>
-            <span class="artist">{album.artist}</span>
-          </a>
-        {/each}
-      </div>
-    </section>
-  {/if}
+    {#if recent.length}
+      <section>
+        <h2>Recently Added</h2>
+        <div class="shelf">
+          {#each recent as album}
+            <a class="album-card" href="#/album/{album.id}">
+              <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
+              <span class="title">{album.name}</span>
+              <span class="artist">{album.artist}</span>
+            </a>
+          {/each}
+        </div>
+      </section>
+    {/if}
 
-  {#if !recent.length && !random.length}
-    <p class="hint">Browse your <a href="#/artists">artists</a> or use the search bar above.</p>
-  {/if}
-</div>
+    {#if random.length}
+      <section>
+        <h2>Discover</h2>
+        <div class="shelf">
+          {#each random as album}
+            <a class="album-card" href="#/album/{album.id}">
+              <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
+              <span class="title">{album.name}</span>
+              <span class="artist">{album.artist}</span>
+            </a>
+          {/each}
+        </div>
+      </section>
+    {/if}
+
+    {#if !recent.length && !random.length}
+      <p class="hint">Browse your <a href="#/artists">artists</a> or use the search bar above.</p>
+    {/if}
+  </div>
+{/if}
 
 <style>
   .home { padding-top: 32px; }
+
+  .home-loading { height: 100%; }
 
   .home-header {
     display: flex;
