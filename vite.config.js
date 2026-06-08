@@ -23,5 +23,19 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    // Mirrors the production nginx proxy: MusicBrainz blocks plain browser
+    // User-Agents, so /api/mb/ requests are rewritten and re-headered here.
+    proxy: {
+      '/api/mb': {
+        target: 'https://musicbrainz.org/ws/2',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api\/mb/, ''),
+        configure: proxy => {
+          proxy.on('proxyReq', proxyReq => {
+            proxyReq.setHeader('User-Agent', 'tonearm/0.1 (local)')
+          })
+        },
+      },
+    },
   },
 })

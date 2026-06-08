@@ -1,17 +1,8 @@
 <script>
   import { coverUrl } from '../api/subsonic.js'
+  import { mbFetch } from '../api/musicbrainz.js'
 
   const cache = new Map()
-
-  let mbChain = Promise.resolve()
-  function mbFetch(path) {
-    const result = mbChain.then(async () => {
-      await new Promise(r => setTimeout(r, 1200))
-      return fetch(`/api/mb/${path}`)
-    })
-    mbChain = result.then(() => {}, () => {})
-    return result
-  }
 
   async function fetchAlbumArt(artist, album) {
     const key = `${artist}::${album}`
@@ -28,8 +19,7 @@
     } catch {}
 
     try {
-      const r2 = await mbFetch(`release-group/?query=artist:${encodeURIComponent(artist)}+releasegroup:${encodeURIComponent(album)}&limit=1&fmt=json`)
-      const d2 = await r2.json()
+      const d2 = await mbFetch(`release-group/?query=artist:${encodeURIComponent(artist)}+releasegroup:${encodeURIComponent(album)}&limit=1&fmt=json`)
       const mbid = d2['release-groups']?.[0]?.id
       if (!mbid) { cache.set(key, 'failed'); return null }
       const url = `https://coverartarchive.org/release-group/${mbid}/front-250`

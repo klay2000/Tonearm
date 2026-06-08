@@ -4,6 +4,7 @@
 
 A minimal Svelte 5 web music client for a Gonic/Subsonic server.
 No backend — the browser talks directly to Gonic. Served as static files via nginx.
+Also packaged as a native Linux desktop app ("Tonearm") via the Tauri v2 wrapper in `src-tauri/`.
 
 - **Gonic server**: `http://10.0.0.10:4747`
 - **Dev VM (nginx)**: `http://192.168.122.79`
@@ -17,6 +18,7 @@ No backend — the browser talks directly to Gonic. Served as static files via n
 - Vite 5 — `npm run dev` (port 5173) / `npm run build` (outputs `dist/`)
 - Zero runtime dependencies — do not add npm packages
 - Plain CSS custom properties for theming — no CSS framework
+- Tauri v2 (`src-tauri/`) — desktop wrapper, builds as a Linux AppImage; `npm run tauri dev` / `npm run tauri build`
 
 ---
 
@@ -46,6 +48,10 @@ src/
     Search.svelte             # grouped results
     Settings.svelte           # theme pref, shuffle mode
     Login.svelte
+src-tauri/                      # Tauri v2 desktop wrapper (builds Tonearm AppImage)
+  Cargo.toml
+  tauri.conf.json
+  src/
 ```
 
 ---
@@ -75,6 +81,11 @@ Hash-based (`#/path`). Routes are matched in `App.svelte`'s `route()` function. 
 **Commits**
 - Run `npm run build` successfully before every commit — do not commit a broken build.
 - Conventional commit prefixes (`feat:`, `fix:`, `docs:`) are preferred. Include the issue number when relevant, e.g. `feat: shuffle controls (#12)`.
+
+**Testing**
+- Don't drive the app yourself as a substitute for the user's review (launching it, clicking through screens, taking screenshots, etc.). A passing build/typecheck shows the code compiles, not that the feature is right — that judgment belongs to the user.
+- Keep a human in the loop: when a change is ready to be exercised, hand it to the user (open the PR, describe what changed and how to try it) rather than autonomously confirming it "works."
+- Exception: quick, narrowly-scoped checks needed to debug your own change while coding (e.g. confirming a build error is fixed) are fine — the line is autonomously *validating the feature* end-to-end on the user's behalf.
 
 **Pull requests**
 - Open a PR when the work is ready to test.

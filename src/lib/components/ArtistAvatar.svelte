@@ -1,4 +1,6 @@
 <script>
+  import { mbFetch } from '../api/musicbrainz.js'
+
   const cache = new Map()   // searchName → url | 'failed'
 
   // Strip feat./& collaborators — no image source has "X feat. Y" as a standalone artist
@@ -7,17 +9,6 @@
       .replace(/\s+(feat\.?|ft\.?|featuring)\s+.*/i, '')
       .replace(/\s*[,&]\s+.+$/, '')
       .trim()
-  }
-
-  // Sequential queue for MusicBrainz only (1 req/sec limit)
-  let mbChain = Promise.resolve()
-  function mbFetch(path) {
-    const result = mbChain.then(async () => {
-      await new Promise(r => setTimeout(r, 1200))
-      return fetch(`/api/mb/${path}`)
-    })
-    mbChain = result.then(() => {}, () => {})
-    return result
   }
 
   async function fetchArtistImage(name, size) {
@@ -34,13 +25,11 @@
     if (thumb) { cache.set(searchName, thumb); return thumb }
 
     // Step 2: MusicBrainz → MBID → Wikidata → Wikimedia (rate-limited fallback)
-    const r2 = await mbFetch(`artist/?query=artist:${encodeURIComponent(searchName)}&limit=1&fmt=json`)
-    const d2 = await r2.json()
+    const d2 = await mbFetch(`artist/?query=artist:${encodeURIComponent(searchName)}&limit=1&fmt=json`)
     const mbid = d2.artists?.[0]?.id
     if (!mbid) { cache.set(searchName, 'failed'); return null }
 
-    const r3 = await mbFetch(`artist/${mbid}?inc=url-rels&fmt=json`)
-    const d3 = await r3.json()
+    const d3 = await mbFetch(`artist/${mbid}?inc=url-rels&fmt=json`)
     const qid = d3.relations?.find(r => r.url?.resource?.includes('wikidata.org'))?.url?.resource?.split('/wiki/')[1]
     if (!qid) { cache.set(searchName, 'failed'); return null }
 
