@@ -1,4 +1,5 @@
 import { writable, get } from 'svelte/store'
+import { localDateString, sunriseSunsetUrl, isDarkAt } from './sunTimes.js'
 
 const KEY = 'subsonic_theme'
 
@@ -12,8 +13,8 @@ function systemDark() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
-async function sunriseSunset(lat, lon) {
-  const res = await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&formatted=0`)
+async function sunriseSunset(lat, lon, dateStr) {
+  const res = await fetch(sunriseSunsetUrl(lat, lon, dateStr))
   const data = await res.json()
   if (data.status !== 'OK') throw new Error('sunrise-sunset API error')
   return { rise: new Date(data.results.sunrise), set: new Date(data.results.sunset) }
@@ -36,9 +37,9 @@ export async function applyTheme(pref) {
     const { latitude, longitude } = await new Promise((res, rej) =>
       navigator.geolocation.getCurrentPosition(p => res(p.coords), rej, { timeout: 5000 })
     )
-    const { rise, set } = await sunriseSunset(latitude, longitude)
     const now = new Date()
-    setDark(now < rise || now > set)
+    const { rise, set } = await sunriseSunset(latitude, longitude, localDateString(now))
+    setDark(isDarkAt(now, rise, set))
   } catch {
     // geolocation denied or failed — system pref already applied above
   }
