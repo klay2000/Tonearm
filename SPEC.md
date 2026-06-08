@@ -53,7 +53,9 @@ subsonic-client/
     │   ├── stores/
     │   │   ├── auth.js        # login state + credentials (localStorage)
     │   │   ├── player.js      # queue, playback state, volume
+    │   │   ├── queueLogic.js  # pure queue-index helpers (+ queueLogic.test.js)
     │   │   ├── router.js      # hash-based router
+    │   │   ├── hashRoute.js   # pure #hash parsing (+ hashRoute.test.js)
     │   │   ├── theme.js       # dark/light/auto theme
     │   │   └── sunTimes.js    # pure sunrise/sunset helpers (+ sunTimes.test.js)
     │   └── components/
@@ -106,7 +108,16 @@ docker run -d -p 8080:80 tonearm
 
 ## Testing
 
-`npm test` runs `src/**/*.test.js` with Node's built-in test runner (`node --test`) — no extra dependency. Tests live alongside the modules they cover (e.g. `src/lib/stores/sunTimes.test.js`); favor extracting pure logic into DOM-free modules so it can be tested this way.
+`npm test` runs `src/**/*.test.js` with Node's built-in test runner (`node --test`) — no extra dependency. Tests live alongside the modules they cover (e.g. `src/lib/stores/sunTimes.test.js`, `queueLogic.test.js`, `hashRoute.test.js`); favor extracting pure logic into DOM-free modules so it can be tested this way. Coverage is intentionally partial — pure logic only, no Svelte component or browser-glue tests — and full coverage isn't a goal; when a bug is found, add a regression test for the broken logic alongside the fix.
+
+---
+
+## CI/CD
+
+GitHub Actions workflows live in `.github/workflows/`:
+
+- **`ci.yml`** — runs on every push/PR to `main`: `npm ci`, `npm run build`, `npm test`.
+- **`release.yml`** — runs when a tag matching `x.y.z` (e.g. `1.2.0`) is pushed: builds the web bundle and the Tauri AppImage, zips the former, and publishes both as assets on a GitHub release named after the tag (via `gh release create`).
 
 ---
 
@@ -213,6 +224,8 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Desktop app: Tauri v2 wrapper, builds as a Linux AppImage
 - [x] Docker image (multi-stage build, bundled nginx + MusicBrainz proxy)
 - [x] Regression tests for auto theme sunrise/sunset logic (`npm test`)
+- [x] Unit tests for queue-index arithmetic and hash-route parsing (`npm test`)
+- [x] CI (build + test on push/PR) and tagged-release automation (web bundle + AppImage → GitHub release)
 
 ## Roadmap
 
@@ -223,6 +236,5 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 | [#6](https://github.com/klay2000/subsonic-client/issues/6) | Notifications | open |
 | [#10](https://github.com/klay2000/subsonic-client/issues/10) | Mobile app | open |
 | [#32](https://github.com/klay2000/subsonic-client/issues/32) | Broader test coverage | open |
-| [#33](https://github.com/klay2000/subsonic-client/issues/33) | CI/CD | open |
 | [#41](https://github.com/klay2000/subsonic-client/issues/41) | Logo | open |
 | [#42](https://github.com/klay2000/subsonic-client/issues/42) | Revamp login screen | open |

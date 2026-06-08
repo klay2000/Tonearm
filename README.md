@@ -55,6 +55,17 @@ docker run -d -p 8080:80 tonearm   # → http://localhost:8080
 npm test          # runs src/**/*.test.js with Node's built-in test runner
 ```
 
+Tests cover pure logic only (sun-times math, queue-index arithmetic, hash-route parsing — see `src/lib/stores/*.test.js`); Svelte components and browser-dependent store glue aren't unit-tested.
+
+## CI/CD
+
+GitHub Actions (`.github/workflows/`):
+
+- **`ci.yml`** — on every push/PR to `main`: install, `npm run build`, `npm test`.
+- **`release.yml`** — on pushing a version tag like `1.2.3`: builds the web bundle and the Tauri AppImage, then publishes both as a GitHub release named after the tag.
+
+To cut a release: tag a commit on `main` with a plain `x.y.z` version (e.g. `git tag 1.2.0 && git push origin 1.2.0`).
+
 ## Desktop app (Tauri)
 
 The `src-tauri/` directory wraps the web app as a native Linux desktop app ("Tonearm") using Tauri v2, bundled as an AppImage.

@@ -1,5 +1,6 @@
 import { writable, derived, get } from 'svelte/store'
 import { auth } from './auth.js'
+import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove } from './queueLogic.js'
 
 export const queue = writable([])
 export const queueIndex = writable(-1)
@@ -56,10 +57,8 @@ export function playNext() {
     let next
     do { next = Math.floor(Math.random() * q.length) } while (next === i)
     queueIndex.set(next)
-  } else if (i < q.length - 1) {
-    queueIndex.set(i + 1)
-  } else if (r === 'all') {
-    queueIndex.set(0)
+  } else {
+    queueIndex.set(linearNextIndex(i, q.length, r))
   }
 }
 
@@ -68,7 +67,7 @@ export function playPrev() {
   if (get(currentTime) > 3) {
     currentTime.set(0)
   } else {
-    queueIndex.set(Math.max(0, i - 1))
+    queueIndex.set(prevIndex(i))
   }
 }
 
@@ -99,20 +98,13 @@ export function moveQueueItem(from, to) {
   })
   // Keep queueIndex pointing at the same track after the move
   const i = get(queueIndex)
-  if (from === i) {
-    queueIndex.set(to)
-  } else if (from < i && to >= i) {
-    queueIndex.set(i - 1)
-  } else if (from > i && to <= i) {
-    queueIndex.set(i + 1)
-  }
+  queueIndex.set(indexAfterMove(i, from, to))
 }
 
 export function removeFromQueue(index) {
   const i = get(queueIndex)
   queue.update(q => q.filter((_, n) => n !== index))
-  if (index < i) queueIndex.set(i - 1)
-  else if (index === i) queueIndex.set(Math.min(i, get(queue).length - 1))
+  queueIndex.set(indexAfterRemove(i, index, get(queue).length))
 }
 
 export function clearQueue() {

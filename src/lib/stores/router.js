@@ -1,16 +1,14 @@
 import { writable } from 'svelte/store'
+import { parseHash } from './hashRoute.js'
 
-function parseHash() {
-  const hash = window.location.hash.slice(1) || '/'
-  const [path, ...rest] = hash.split('?')
-  const params = Object.fromEntries(new URLSearchParams(rest.join('?')))
-  return { path, params }
+function currentHash() {
+  return parseHash(window.location.hash)
 }
 
 function createRouter() {
-  const { subscribe, set } = writable(parseHash())
+  const { subscribe, set } = writable(currentHash())
 
-  window.addEventListener('hashchange', () => set(parseHash()))
+  window.addEventListener('hashchange', () => set(currentHash()))
 
   return {
     subscribe,
