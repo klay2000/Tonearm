@@ -64,7 +64,7 @@ export function playNext() {
 
 export function playPrev() {
   const i = get(queueIndex)
-  if (get(currentTime) > 3) {
+  if (get(currentTime) > 5) {
     currentTime.set(0)
   } else {
     queueIndex.set(prevIndex(i))
