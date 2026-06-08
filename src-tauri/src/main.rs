@@ -11,5 +11,11 @@ fn main() {
   std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
   std::env::set_var("LIBGL_ALWAYS_SOFTWARE", "1");
 
+  // The AppImage bundles its own GLib, which can be a different version than
+  // the host's gvfs GIO modules — loading them then fails with "undefined
+  // symbol: g_variant_builder_init_static" (and similar). Tonearm has no need
+  // for gvfs (trash, network mounts, …), so skip it and use the local VFS.
+  std::env::set_var("GIO_USE_VFS", "local");
+
   app_lib::run();
 }

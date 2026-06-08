@@ -82,7 +82,19 @@ npm run tauri dev      # launch in development (hot reload)
 npm run tauri build    # build the AppImage
 ```
 
-`src-tauri/src/main.rs` forces WebKit software rendering (`WEBKIT_DISABLE_COMPOSITING_MODE`, `WEBKIT_DISABLE_DMABUF_RENDERER`, `LIBGL_ALWAYS_SOFTWARE`) before the webview starts, so both `tauri dev` and the built AppImage render correctly on systems without proper GPU passthrough (e.g. VMs) — which would otherwise show a blank window with `GBM`/`DRM_IOCTL_MODE_CREATE_DUMB` errors in the log.
+`src-tauri/src/main.rs` forces WebKit software rendering (`WEBKIT_DISABLE_COMPOSITING_MODE`, `WEBKIT_DISABLE_DMABUF_RENDERER`, `LIBGL_ALWAYS_SOFTWARE`) and the local GIO VFS (`GIO_USE_VFS=local`) before the webview starts. This fixes two host-dependent failure modes baked into WebKitGTK/AppImage:
+
+- **Blank window** (`GBM`/`DRM_IOCTL_MODE_CREATE_DUMB ... Permission denied` in the log) — happens on VMs and other virtual/remote displays without a working DRM/KMS GPU path.
+- **`undefined symbol: g_variant_builder_init_static` / "Failed to load module … libgvfsdbus.so"** — the AppImage's bundled GLib can mismatch the host's `gvfs` GIO modules; Tonearm doesn't need gvfs (trash, network mounts, …), so it's skipped.
+
+### Running the AppImage
+
+WebKitGTK plays `<audio>` through GStreamer, which the AppImage does **not** bundle — install the host's plugins or playback will silently fail (look for `GStreamer element appsink/autoaudiosink not found` in the log):
+
+```bash
+sudo apt-get install -y gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+  gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav
+```
 
 ### nginx
 
