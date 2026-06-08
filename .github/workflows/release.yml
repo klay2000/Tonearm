@@ -23,6 +23,13 @@ jobs:
       - run: npm ci
       - run: npm test
 
+      - name: Sync app version with release tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          jq --arg v "$VERSION" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
+          jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
+
       - name: Build web app
         run: npm run build
 
