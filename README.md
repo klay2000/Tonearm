@@ -82,11 +82,7 @@ npm run tauri dev      # launch in development (hot reload)
 npm run tauri build    # build the AppImage
 ```
 
-On systems without proper GPU passthrough (e.g. VMs), WebKit's compositor may fail to render (a blank window with `GBM`/`DRM_IOCTL_MODE_CREATE_DUMB` errors in the log). Force software rendering with:
-
-```bash
-WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 npm run tauri dev
-```
+`src-tauri/src/main.rs` forces WebKit software rendering (`WEBKIT_DISABLE_COMPOSITING_MODE`, `WEBKIT_DISABLE_DMABUF_RENDERER`, `LIBGL_ALWAYS_SOFTWARE`) before the webview starts, so both `tauri dev` and the built AppImage render correctly on systems without proper GPU passthrough (e.g. VMs) — which would otherwise show a blank window with `GBM`/`DRM_IOCTL_MODE_CREATE_DUMB` errors in the log.
 
 ### nginx
 
