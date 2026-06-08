@@ -1,7 +1,7 @@
 # Subsonic Client — Specification
 
-**Version**: 0.3
-**Date**: 2026-06-04
+**Version**: 0.4
+**Date**: 2026-06-07
 **Server**: Gonic at `http://10.0.0.10:4747`
 **Web host**: `http://192.168.122.79` (dev VM)
 
@@ -9,7 +9,7 @@
 
 ## Overview
 
-A minimal, modern, self-hosted music client for a Gonic/Subsonic server. Built as a hosted web app first; intended to be packaged as a Linux AppImage (Tauri v2) and later a mobile app.
+A minimal, modern, self-hosted music client for a Gonic/Subsonic server. Built as a hosted web app first, now also packaged as a Linux AppImage desktop app (Tauri v2); a mobile app is planned.
 
 ---
 
@@ -24,7 +24,7 @@ A minimal, modern, self-hosted music client for a Gonic/Subsonic server. Built a
 | API layer | Subsonic REST API (JSON) | Gonic fully supports it |
 | Artist images | TheAudioDB → Wikidata/Wikimedia | TheAudioDB by name first (fast, parallel); MusicBrainz+Wikidata fallback |
 | Album art | Server → TheAudioDB → Cover Art Archive | Falls back to scraping when server has no art |
-| Desktop wrapper (planned) | Tauri v2 | Rust-based, AppImage support, official mobile target |
+| Desktop wrapper | Tauri v2 | Rust-based, wraps the web app as a native Linux AppImage ("Tonearm") |
 
 ---
 
@@ -37,6 +37,10 @@ subsonic-client/
 ├── package.json
 ├── vite.config.js
 ├── index.html
+├── src-tauri/              # Tauri v2 desktop wrapper (builds Tonearm AppImage)
+│   ├── Cargo.toml
+│   ├── tauri.conf.json
+│   └── src/
 └── src/
     ├── main.js
     ├── App.svelte              # shell, routing, keyboard shortcuts
@@ -180,6 +184,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Settings screen: theme preference, shuffle mode, build info (branch + commit)
 - [x] Keyboard shortcuts
 - [x] App name: Tonearm
+- [x] Desktop app: Tauri v2 wrapper, builds as a Linux AppImage
 
 ## Roadmap
 
@@ -188,6 +193,5 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 | [#1](https://github.com/klay2000/subsonic-client/issues/1) | ListenBrainz integration | open |
 | [#2](https://github.com/klay2000/subsonic-client/issues/2) | Music ingestion + library management | open |
 | [#6](https://github.com/klay2000/subsonic-client/issues/6) | Notifications | open |
-| [#9](https://github.com/klay2000/subsonic-client/issues/9) | Desktop app (Tauri v2 AppImage) | open |
 | [#10](https://github.com/klay2000/subsonic-client/issues/10) | Mobile app | open |
 | [#25](https://github.com/klay2000/subsonic-client/issues/25) | Reposition playback scrubber | open |

@@ -4,6 +4,7 @@
 
 A minimal Svelte 5 web music client for a Gonic/Subsonic server.
 No backend — the browser talks directly to Gonic. Served as static files via nginx.
+Also packaged as a native Linux desktop app ("Tonearm") via the Tauri v2 wrapper in `src-tauri/`.
 
 - **Gonic server**: `http://10.0.0.10:4747`
 - **Dev VM (nginx)**: `http://192.168.122.79`
@@ -17,6 +18,7 @@ No backend — the browser talks directly to Gonic. Served as static files via n
 - Vite 5 — `npm run dev` (port 5173) / `npm run build` (outputs `dist/`)
 - Zero runtime dependencies — do not add npm packages
 - Plain CSS custom properties for theming — no CSS framework
+- Tauri v2 (`src-tauri/`) — desktop wrapper, builds as a Linux AppImage; `npm run tauri dev` / `npm run tauri build`
 
 ---
 
@@ -46,6 +48,10 @@ src/
     Search.svelte             # grouped results
     Settings.svelte           # theme pref, shuffle mode
     Login.svelte
+src-tauri/                      # Tauri v2 desktop wrapper (builds Tonearm AppImage)
+  Cargo.toml
+  tauri.conf.json
+  src/
 ```
 
 ---
