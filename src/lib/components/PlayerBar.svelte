@@ -30,6 +30,15 @@
     else audio.pause()
   })
 
+  // React to external seeks (e.g. restart-on-prev setting currentTime to 0).
+  // Guard against feeding back into onTimeUpdate by only seeking once the
+  // store and element have meaningfully diverged.
+  $effect(() => {
+    if (audio && Math.abs(audio.currentTime - $currentTime) > 1) {
+      audio.currentTime = $currentTime
+    }
+  })
+
   function onTimeUpdate() {
     currentTime.set(audio.currentTime)
     duration.set(audio.duration || 0)
