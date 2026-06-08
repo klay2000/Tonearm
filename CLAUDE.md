@@ -91,6 +91,7 @@ Hash-based (`#/path`). Routes are matched in `App.svelte`'s `route()` function. 
 - Open a PR when the work is ready to test.
 - Send a push notification and ask the user if they'd like to test it.
 - Do not merge until the user confirms it's good.
+- Before merging, update `README.md` and/or `SPEC.md` if the change adds/removes files, scripts, or commands; changes deployment or build steps; or fixes a bug in a way that changes documented behavior. Docs land in the same PR as the change, not as a follow-up.
 
 ---
 
