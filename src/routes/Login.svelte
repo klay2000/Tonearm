@@ -1,6 +1,7 @@
 <script>
   import { testConnection } from '../lib/api/subsonic.js'
   import { login } from '../lib/stores/auth.js'
+  import LoadingScreen from '../lib/components/LoadingScreen.svelte'
 
   let serverUrl = $state('http://10.0.0.10:4747')
   let username = $state('')
@@ -24,29 +25,31 @@
 </script>
 
 <div class="login-page">
-  <div class="card">
-    <h1>Tonearm</h1>
-    <form onsubmit={onSubmit}>
-      <label>
-        Server URL
-        <input type="url" bind:value={serverUrl} placeholder="http://…" required />
-      </label>
-      <label>
-        Username
-        <input type="text" bind:value={username} autocomplete="username" required />
-      </label>
-      <label>
-        Password
-        <input type="password" bind:value={password} autocomplete="current-password" required />
-      </label>
-      {#if error}
-        <p class="error">{error}</p>
-      {/if}
-      <button type="submit" disabled={loading}>
-        {loading ? 'Connecting…' : 'Connect'}
-      </button>
-    </form>
-  </div>
+  {#if loading}
+    <LoadingScreen message="Connecting to server…" />
+  {:else}
+    <div class="card">
+      <h1>Tonearm</h1>
+      <form onsubmit={onSubmit}>
+        <label>
+          Server URL
+          <input type="url" bind:value={serverUrl} placeholder="http://…" required />
+        </label>
+        <label>
+          Username
+          <input type="text" bind:value={username} autocomplete="username" required />
+        </label>
+        <label>
+          Password
+          <input type="password" bind:value={password} autocomplete="current-password" required />
+        </label>
+        {#if error}
+          <p class="error">{error}</p>
+        {/if}
+        <button type="submit">Connect</button>
+      </form>
+    </div>
+  {/if}
 </div>
 
 <style>

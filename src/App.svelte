@@ -3,7 +3,9 @@
   import { togglePlay, playNext, playPrev, volume } from './lib/stores/player.js'
   import { get } from 'svelte/store'
   import { isLoggedIn } from './lib/stores/auth.js'
+  import { ping } from './lib/api/subsonic.js'
   import Login from './routes/Login.svelte'
+  import LoadingScreen from './lib/components/LoadingScreen.svelte'
   import Header from './lib/components/Header.svelte'
   import Sidebar from './lib/components/Sidebar.svelte'
   import PlayerBar from './lib/components/PlayerBar.svelte'
@@ -13,6 +15,13 @@
   import Album from './routes/Album.svelte'
   import Search from './routes/Search.svelte'
   import Settings from './routes/Settings.svelte'
+
+  // On startup with stored credentials, confirm the server is reachable
+  // before rendering the app so it doesn't appear to hang while loading.
+  let checkingConnection = $state(get(isLoggedIn))
+  if (checkingConnection) {
+    ping().catch(() => {}).finally(() => { checkingConnection = false })
+  }
 
   let { path, params } = $derived($router)
 
@@ -50,7 +59,11 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-{#if $isLoggedIn}
+{#if checkingConnection}
+  <div class="boot-loading">
+    <LoadingScreen message="Connecting to your library…" />
+  </div>
+{:else if $isLoggedIn}
   <div class="app">
     <Header />
     <div class="body">
@@ -93,6 +106,10 @@
   :global(a) { color: inherit; text-decoration: none; }
   :global(button) { cursor: pointer; border: none; background: none; color: inherit; font: inherit; }
 
+  .boot-loading {
+    height: 100dvh;
+    background: var(--bg);
+  }
   .app {
     display: grid;
     grid-template-rows: var(--header-h) 1fr var(--player-h);
