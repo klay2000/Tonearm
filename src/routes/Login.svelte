@@ -24,29 +24,34 @@
 </script>
 
 <div class="login-page">
-  <div class="card">
-    <h1>Tonearm</h1>
-    <form onsubmit={onSubmit}>
-      <label>
-        Server URL
-        <input type="url" bind:value={serverUrl} placeholder="http://…" required />
-      </label>
-      <label>
-        Username
-        <input type="text" bind:value={username} autocomplete="username" required />
-      </label>
-      <label>
-        Password
-        <input type="password" bind:value={password} autocomplete="current-password" required />
-      </label>
-      {#if error}
-        <p class="error">{error}</p>
-      {/if}
-      <button type="submit" disabled={loading}>
-        {loading ? 'Connecting…' : 'Connect'}
-      </button>
-    </form>
-  </div>
+  {#if loading}
+    <div class="loading-screen">
+      <div class="spinner"></div>
+      <p>Connecting to server…</p>
+    </div>
+  {:else}
+    <div class="card">
+      <h1>Tonearm</h1>
+      <form onsubmit={onSubmit}>
+        <label>
+          Server URL
+          <input type="url" bind:value={serverUrl} placeholder="http://…" required />
+        </label>
+        <label>
+          Username
+          <input type="text" bind:value={username} autocomplete="username" required />
+        </label>
+        <label>
+          Password
+          <input type="password" bind:value={password} autocomplete="current-password" required />
+        </label>
+        {#if error}
+          <p class="error">{error}</p>
+        {/if}
+        <button type="submit">Connect</button>
+      </form>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -56,6 +61,25 @@
     align-items: center;
     justify-content: center;
     background: var(--bg);
+  }
+  .loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
   .card {
     background: var(--surface);
