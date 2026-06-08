@@ -87,7 +87,7 @@
     --text-muted:#666666;
     --accent:    #5b5bd6;
     --border:    #e0e0e0;
-    --player-h:  72px;
+    --player-h:  92px;
     --sidebar-w: 180px;
     --header-h:  52px;
     font-family: system-ui, -apple-system, sans-serif;

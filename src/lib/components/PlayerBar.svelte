@@ -171,6 +171,26 @@
 {/if}
 
 <div class="player">
+  <div class="scrub-row">
+    <span class="time">{fmt(scrubbing ? scrubRatio * $duration : $currentTime)}</span>
+    <button
+      class="progress-track"
+      class:scrubbing
+      onpointerdown={onScrubStart}
+      onpointermove={onScrubMove}
+      onpointerup={onScrubEnd}
+      onpointercancel={onScrubEnd}
+      aria-label="Seek"
+    >
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {progress}%"></div>
+      </div>
+      <div class="progress-thumb" style="left: {progress}%"></div>
+    </button>
+    <span class="time">{fmt($duration)}</span>
+  </div>
+
+  <div class="main-row">
   {#if $currentTrack}
     <div class="now-playing">
       <img src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 48)} alt="" class="cover" />
@@ -275,21 +295,6 @@
   </div>
 
   <div class="right">
-    <div class="time">{fmt(scrubbing ? scrubRatio * $duration : $currentTime)} / {fmt($duration)}</div>
-    <button
-      class="progress-track"
-      class:scrubbing
-      onpointerdown={onScrubStart}
-      onpointermove={onScrubMove}
-      onpointerup={onScrubEnd}
-      onpointercancel={onScrubEnd}
-      aria-label="Seek"
-    >
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: {progress}%"></div>
-      </div>
-      <div class="progress-thumb" style="left: {progress}%"></div>
-    </button>
     <button
       class="queue-btn"
       class:queue-btn-active={showQueue}
@@ -304,20 +309,34 @@
       </svg>
     </button>
   </div>
+  </div>
 </div>
 
 <style>
   .player {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 16px;
-    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 20px;
     background: var(--surface);
     border-top: 1px solid var(--border);
     height: var(--player-h);
     position: relative;
     z-index: 10;
+    box-sizing: border-box;
+  }
+  .scrub-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+  .main-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
   }
   .now-playing {
     display: flex;
@@ -400,7 +419,6 @@
   }
   .progress-track {
     flex: 1;
-    max-width: 400px;
     height: 20px;
     background: transparent;
     cursor: pointer;
