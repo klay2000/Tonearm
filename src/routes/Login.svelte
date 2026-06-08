@@ -1,6 +1,7 @@
 <script>
   import { testConnection } from '../lib/api/subsonic.js'
   import { login } from '../lib/stores/auth.js'
+  import LoadingScreen from '../lib/components/LoadingScreen.svelte'
 
   let serverUrl = $state('http://10.0.0.10:4747')
   let username = $state('')
@@ -25,10 +26,7 @@
 
 <div class="login-page">
   {#if loading}
-    <div class="loading-screen">
-      <div class="spinner"></div>
-      <p>Connecting to server…</p>
-    </div>
+    <LoadingScreen message="Connecting to server…" />
   {:else}
     <div class="card">
       <h1>Tonearm</h1>
@@ -61,25 +59,6 @@
     align-items: center;
     justify-content: center;
     background: var(--bg);
-  }
-  .loading-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    color: var(--text-muted);
-    font-size: 14px;
-  }
-  .spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
   }
   .card {
     background: var(--surface);
