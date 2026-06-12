@@ -35,11 +35,13 @@
 
   let scrapedSrc = $state(null)
   let failed = $state(false)
+  let loaded = $state(false)
   let triggered = false
 
   async function onServerError() {
     if (triggered || !artist || !album) { failed = true; return }
     triggered = true
+    loaded = false
     const url = await fetchAlbumArt(artist, album)
     if (url) scrapedSrc = url
     else failed = true
@@ -49,15 +51,24 @@
     scrapedSrc = null
     failed = true
   }
+
+  function onLoad() {
+    loaded = true
+  }
 </script>
 
 {#if failed}
   <div class="cover-art" role="img" aria-label={alt}></div>
 {:else}
   <div class="cover-art">
+    {#if !loaded}
+      <div class="spinner"></div>
+    {/if}
     <img
       src={scrapedSrc ?? coverUrl(id, size)}
       {alt}
+      class:loaded
+      onload={onLoad}
       onerror={scrapedSrc ? onScrapedError : onServerError}
     />
   </div>
@@ -80,5 +91,25 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .cover-art img.loaded {
+    opacity: 1;
+  }
+  .spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 28%;
+    aspect-ratio: 1;
+    margin: -14% 0 0 -14%;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>
