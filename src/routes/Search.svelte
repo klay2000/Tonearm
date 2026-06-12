@@ -1,7 +1,9 @@
 <script>
   import { search } from '../lib/api/subsonic.js'
-  import CoverArt from '../lib/components/CoverArt.svelte'
+  import AlbumGrid from '../lib/components/AlbumGrid.svelte'
+  import ViewToggle from '../lib/components/ViewToggle.svelte'
   import { playQueue, insertNext, enqueue } from '../lib/stores/player.js'
+  import { viewModes } from '../lib/stores/viewMode.js'
 
   let { query } = $props()
 
@@ -38,18 +40,11 @@
 
   {#if results.album?.length}
     <section>
-      <h2>Albums</h2>
-      <div class="album-rows">
-        {#each results.album as al}
-          <a class="album-row" href="#/album/{al.id}">
-            <CoverArt id={al.id} artist={al.artist} album={al.name} size={48} />
-            <div>
-              <div class="row-title">{al.name}</div>
-              <div class="row-sub">{al.artist}</div>
-            </div>
-          </a>
-        {/each}
+      <div class="section-header">
+        <h2>Albums</h2>
+        <ViewToggle view="search" />
       </div>
+      <AlbumGrid albums={results.album} mode={$viewModes.search} subtitle="artist" />
     </section>
   {/if}
 
@@ -100,18 +95,13 @@
   }
   .row:hover { background: var(--surface); }
 
-  .album-rows { display: flex; flex-direction: column; gap: 4px; }
-  .album-row {
+  .section-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 6px 12px;
-    border-radius: 6px;
+    justify-content: space-between;
+    margin-bottom: 8px;
   }
-  .album-row:hover { background: var(--surface); }
-  .album-row :global(.cover-art) { width: 40px; height: 40px; padding-top: 0; border-radius: 4px; }
-  .row-title { font-weight: 500; }
-  .row-sub { font-size: 12px; color: var(--text-muted); }
+  .section-header h2 { margin-bottom: 0; }
 
   .song-row {
     display: flex;

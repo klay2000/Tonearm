@@ -1,8 +1,10 @@
 <script>
   import { getArtist, getAlbum } from '../lib/api/subsonic.js'
-  import CoverArt from '../lib/components/CoverArt.svelte'
+  import AlbumGrid from '../lib/components/AlbumGrid.svelte'
+  import ViewToggle from '../lib/components/ViewToggle.svelte'
   import { playQueue } from '../lib/stores/player.js'
   import ArtistAvatar from '../lib/components/ArtistAvatar.svelte'
+  import { viewModes } from '../lib/stores/viewMode.js'
 
   let { id } = $props()
 
@@ -59,17 +61,11 @@
     </div>
   </div>
   {#if artist.album?.length}
-    <div class="album-grid">
-      {#each artist.album as album}
-        <a class="album-card" href="#/album/{album.id}">
-          <CoverArt id={album.id} artist={artist.name} album={album.name} alt={album.name} />
-          <div class="album-info">
-            <span class="album-title">{album.name}</span>
-            {#if album.year}<span class="album-year">{album.year}</span>{/if}
-          </div>
-        </a>
-      {/each}
+    <div class="section-header">
+      <h2>Albums</h2>
+      <ViewToggle view="artist" />
     </div>
+    <AlbumGrid albums={artist.album} mode={$viewModes.artist} subtitle="year" />
   {:else}
     <p class="muted">There's nothing here.</p>
   {/if}
@@ -102,21 +98,17 @@
   .shuffle-all { border: 1px solid var(--border); color: var(--text); }
   .shuffle-all:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   .shuffle-all:disabled { opacity: 0.6; cursor: default; }
-  .album-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 20px;
-  }
-  .album-card {
+  .section-header {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
   }
-  .album-card :global(.cover-art) {
-    border-radius: 6px;
+  .section-header h2 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
-  .album-card:hover :global(.cover-art) { opacity: 0.85; }
-  .album-info { display: flex; flex-direction: column; gap: 2px; }
-  .album-title { font-weight: 500; font-size: 13px; line-height: 1.3; }
-  .album-year { font-size: 12px; color: var(--text-muted); }
 </style>

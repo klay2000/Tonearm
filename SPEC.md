@@ -57,18 +57,21 @@ subsonic-client/
     │   │   ├── router.js      # hash-based router
     │   │   ├── hashRoute.js   # pure #hash parsing (+ hashRoute.test.js)
     │   │   ├── theme.js       # dark/light/auto theme
-    │   │   └── sunTimes.js    # pure sunrise/sunset helpers (+ sunTimes.test.js)
+    │   │   ├── sunTimes.js    # pure sunrise/sunset helpers (+ sunTimes.test.js)
+    │   │   └── viewMode.js    # per-view list/shelf preference (localStorage)
     │   └── components/
     │       ├── Header.svelte
     │       ├── Sidebar.svelte
     │       ├── PlayerBar.svelte
     │       ├── ArtistAvatar.svelte
     │       ├── CoverArt.svelte
+    │       ├── AlbumGrid.svelte    # renders albums as a shelf (grid) or list
+    │       ├── ViewToggle.svelte   # shelf/list switcher for a given view
     │       └── LoadingScreen.svelte
     └── routes/
         ├── Home.svelte        # greeting + recently added + discover shelves
-        ├── Artists.svelte     # A–Z indexed list with avatars
-        ├── Artist.svelte      # album grid for one artist
+        ├── Artists.svelte     # A–Z indexed list or avatar shelf
+        ├── Artist.svelte      # album grid or list for one artist
         ├── Album.svelte       # track list, play all
         ├── Search.svelte      # grouped results: artists / albums / songs
         ├── Login.svelte       # server URL + credentials
