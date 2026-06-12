@@ -16,6 +16,10 @@
   let gain = $derived($normalizeVolume ? computeReplayGain($currentTrack) : 1)
   let effectiveVolume = $derived(Math.min(1, Math.max(0, $volume * gain)))
 
+  $effect(() => {
+    console.log('[replaygain]', $currentTrack?.title, { normalize: $normalizeVolume, replayGain: $currentTrack?.replayGain, gain, volume: $volume, effectiveVolume })
+  })
+
   // React to track changes — guard src assignment so queue mutations
   // (enqueue, insertNext, reorder) don't reset the current track
   $effect(() => {
