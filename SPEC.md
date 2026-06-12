@@ -214,7 +214,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Mute toggle with dynamic volume icon (preserves volume level)
 - [x] Queue: view, reorder (drag), remove, clear, click-to-play, play next / add to queue
 - [x] Shuffle: random-next mode or reorder-queue mode (configurable in Settings)
-- [x] Volume normalization: applies per-track ReplayGain via a Web Audio GainNode (configurable in Settings, off by default — requires ReplayGain tags in your library, e.g. from `rsgain`)
+- [x] Volume normalization: attenuates loud tracks by scaling the `<audio>` element's volume using per-track ReplayGain (configurable in Settings, off by default — requires ReplayGain tags in your library, e.g. from `rsgain`). Can only turn loud tracks down, not boost quiet ones (volume is capped at 1) — avoids routing through Web Audio, which silences cross-origin streams.
 - [x] Repeat: off / repeat-all / repeat-one
 - [x] Play artist / shuffle artist: fetches all albums in parallel and queues tracks
 - [x] Play / shuffle entire library

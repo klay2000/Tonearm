@@ -8,39 +8,13 @@
   let scrubbing = $state(false)
   let scrubRatio = $state(0)
 
-  // Web Audio graph for ReplayGain-based volume normalization. Created lazily
-  // on first playback (inside a user-gesture-driven effect) so the
-  // AudioContext starts in a "running" state rather than getting stuck
-  // "suspended" — which would otherwise silence all output.
-  let audioCtx = null
-  let gainNode = null
-
-  function ensureAudioGraph() {
-    if (audioCtx) return
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const sourceNode = audioCtx.createMediaElementSource(audio)
-    gainNode = audioCtx.createGain()
-    sourceNode.connect(gainNode)
-    gainNode.connect(audioCtx.destination)
-    applyGain()
-  }
-
-  // Apply (or clear) ReplayGain for the current track.
-  function applyGain() {
-    if (!gainNode) return
-    const track = $currentTrack
-    const normalize = $normalizeVolume
-    const target = normalize ? computeReplayGain(track) : 1
-    console.log('[replaygain]', track?.title, { normalize, replayGain: track?.replayGain, gain: target, audioCtxState: audioCtx?.state })
-    gainNode.gain.setTargetAtTime(target, audioCtx.currentTime, 0.05)
-  }
-
-  // Re-apply whenever the track changes or the setting is toggled.
-  $effect(() => {
-    $currentTrack
-    $normalizeVolume
-    applyGain()
-  })
+  // ReplayGain volume normalization — applied by scaling the <audio>
+  // element's own volume rather than via Web Audio. Cross-origin streams
+  // (the browser talks directly to Gonic, a different origin) would be
+  // silenced entirely by createMediaElementSource, so this avoids Web Audio.
+  // Gain can only attenuate (volume is capped at 1), not boost quiet tracks.
+  let gain = $derived($normalizeVolume ? computeReplayGain($currentTrack) : 1)
+  let effectiveVolume = $derived(Math.min(1, Math.max(0, $volume * gain)))
 
   // React to track changes — guard src assignment so queue mutations
   // (enqueue, insertNext, reorder) don't reset the current track
@@ -51,11 +25,7 @@
       const url = streamUrl(track.id)
       if (audio.src !== url) {
         audio.src = url
-        if ($playing) {
-          ensureAudioGraph()
-          audioCtx.resume()
-          audio.play().catch(() => {})
-        }
+        if ($playing) audio.play().catch(() => {})
       }
     } else {
       audio.src = ''
@@ -65,13 +35,8 @@
   // React to play/pause
   $effect(() => {
     if (!audio) return
-    if ($playing) {
-      ensureAudioGraph()
-      audioCtx.resume()
-      audio.play().catch(() => {})
-    } else {
-      audio.pause()
-    }
+    if ($playing) audio.play().catch(() => {})
+    else audio.pause()
   })
 
   // React to external seeks (e.g. restart-on-prev setting currentTime to 0).
@@ -130,7 +95,6 @@
 
   function onVolumeChange(e) {
     volume.set(Number(e.target.value))
-    if (audio) audio.volume = Number(e.target.value)
     if (muted) { muted = false; if (audio) audio.muted = false }
   }
 
@@ -181,7 +145,7 @@
   bind:this={audio}
   ontimeupdate={onTimeUpdate}
   onended={onEnded}
-  volume={$volume}
+  volume={effectiveVolume}
 ></audio>
 
 {#if showQueue}
