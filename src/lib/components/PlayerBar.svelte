@@ -1,11 +1,36 @@
 <script>
-  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat } from '../stores/player.js'
+  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat, normalizeVolume } from '../stores/player.js'
   import { coverUrl, streamUrl } from '../api/subsonic.js'
+  import { computeReplayGain } from '../stores/replayGain.js'
 
   let audio = $state(null)
   let showQueue = $state(false)
   let scrubbing = $state(false)
   let scrubRatio = $state(0)
+
+  // Web Audio graph for ReplayGain-based volume normalization. Created once
+  // the <audio> element exists; routes through a GainNode to the speakers.
+  let audioCtx = null
+  let gainNode = null
+
+  $effect(() => {
+    if (audio && !audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      const sourceNode = audioCtx.createMediaElementSource(audio)
+      gainNode = audioCtx.createGain()
+      sourceNode.connect(gainNode)
+      gainNode.connect(audioCtx.destination)
+    }
+  })
+
+  // Apply (or clear) ReplayGain whenever the track changes or the setting is toggled.
+  $effect(() => {
+    const track = $currentTrack
+    const normalize = $normalizeVolume
+    if (!gainNode) return
+    const target = normalize ? computeReplayGain(track) : 1
+    gainNode.gain.setTargetAtTime(target, audioCtx.currentTime, 0.05)
+  })
 
   // React to track changes — guard src assignment so queue mutations
   // (enqueue, insertNext, reorder) don't reset the current track
@@ -26,8 +51,12 @@
   // React to play/pause
   $effect(() => {
     if (!audio) return
-    if ($playing) audio.play().catch(() => {})
-    else audio.pause()
+    if ($playing) {
+      audioCtx?.resume()
+      audio.play().catch(() => {})
+    } else {
+      audio.pause()
+    }
   })
 
   // React to external seeks (e.g. restart-on-prev setting currentTime to 0).

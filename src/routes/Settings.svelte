@@ -1,7 +1,7 @@
 <script>
   import { themePref } from '../lib/stores/theme.js'
   import { auth, logout } from '../lib/stores/auth.js'
-  import { shuffleMode } from '../lib/stores/player.js'
+  import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
 
   const themeOptions = [
@@ -19,6 +19,11 @@
   const shuffleModeOptions = [
     { value: 'random',  label: 'Random next', desc: 'Pick a random track each time one ends' },
     { value: 'reorder', label: 'Reorder queue', desc: 'Shuffle the queue in place when toggled on' },
+  ]
+
+  const normalizeVolumeOptions = [
+    { value: false, label: 'Off', desc: 'Play tracks at their original volume' },
+    { value: true,  label: 'On',  desc: 'Even out volume using ReplayGain tags from your library' },
   ]
 </script>
 
@@ -73,6 +78,21 @@
             class="option"
             class:selected={$shuffleMode === opt.value}
             onclick={() => shuffleMode.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Normalize volume</span>
+      <div class="options">
+        {#each normalizeVolumeOptions as opt}
+          <button
+            class="option"
+            class:selected={$normalizeVolume === opt.value}
+            onclick={() => normalizeVolume.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>

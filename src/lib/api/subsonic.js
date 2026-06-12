@@ -1,7 +1,9 @@
 import { get } from 'svelte/store'
 import { auth } from '../stores/auth.js'
 
-const API_META = { v: '1.16.0', c: 'tonearm', f: 'json' }
+// 1.16.1 is the minimum version that includes the ReplayGain fields on
+// song entries (used for volume normalization).
+const API_META = { v: '1.16.1', c: 'tonearm', f: 'json' }
 
 function credentials() {
   const a = get(auth)

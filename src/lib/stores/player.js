@@ -15,6 +15,11 @@ export const repeat = writable('off') // 'off' | 'all' | 'one'
 export const shuffleMode = writable(localStorage.getItem('subsonic_shuffle_mode') ?? 'random')
 shuffleMode.subscribe(v => localStorage.setItem('subsonic_shuffle_mode', v))
 
+// Apply per-track ReplayGain (from the Subsonic API) to even out volume
+// differences between tracks from different sources.
+export const normalizeVolume = writable(localStorage.getItem('subsonic_normalize_volume') === 'true')
+normalizeVolume.subscribe(v => localStorage.setItem('subsonic_normalize_volume', String(v)))
+
 export const currentTrack = derived(
   [queue, queueIndex],
   ([$queue, $queueIndex]) => $queue[$queueIndex] ?? null
