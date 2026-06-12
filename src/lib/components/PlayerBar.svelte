@@ -1,11 +1,20 @@
 <script>
-  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat } from '../stores/player.js'
+  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat, normalizeVolume } from '../stores/player.js'
   import { coverUrl, streamUrl } from '../api/subsonic.js'
+  import { computeReplayGain } from '../stores/replayGain.js'
 
   let audio = $state(null)
   let showQueue = $state(false)
   let scrubbing = $state(false)
   let scrubRatio = $state(0)
+
+  // ReplayGain volume normalization — applied by scaling the <audio>
+  // element's own volume rather than via Web Audio. Cross-origin streams
+  // (the browser talks directly to Gonic, a different origin) would be
+  // silenced entirely by createMediaElementSource, so this avoids Web Audio.
+  // Gain can only attenuate (volume is capped at 1), not boost quiet tracks.
+  let gain = $derived($normalizeVolume ? computeReplayGain($currentTrack) : 1)
+  let effectiveVolume = $derived(Math.min(1, Math.max(0, $volume * gain)))
 
   // React to track changes — guard src assignment so queue mutations
   // (enqueue, insertNext, reorder) don't reset the current track
@@ -16,7 +25,7 @@
       const url = streamUrl(track.id)
       if (audio.src !== url) {
         audio.src = url
-        if ($playing) audio.play()
+        if ($playing) audio.play().catch(() => {})
       }
     } else {
       audio.src = ''
@@ -86,7 +95,6 @@
 
   function onVolumeChange(e) {
     volume.set(Number(e.target.value))
-    if (audio) audio.volume = Number(e.target.value)
     if (muted) { muted = false; if (audio) audio.muted = false }
   }
 
@@ -137,7 +145,7 @@
   bind:this={audio}
   ontimeupdate={onTimeUpdate}
   onended={onEnded}
-  volume={$volume}
+  volume={effectiveVolume}
 ></audio>
 
 {#if showQueue}

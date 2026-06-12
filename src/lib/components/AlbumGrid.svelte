@@ -44,6 +44,9 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    /* Cap card size so a near-empty shelf (e.g. an artist with one or two
+       albums) doesn't stretch covers to fill the whole row via the 1fr track. */
+    max-width: 200px;
   }
   .album-card :global(.cover-art) {
     border-radius: 6px;
