@@ -25,6 +25,7 @@
       const url = streamUrl(track.id)
       if (audio.src !== url) {
         audio.src = url
+        currentTime.set(0)
         if ($playing) audio.play().catch(() => {})
       }
     } else {
