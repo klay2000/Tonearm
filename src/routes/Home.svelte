@@ -1,10 +1,12 @@
 <script>
   import { getAlbumList, getAllAlbums, getAlbum } from '../lib/api/subsonic.js'
-  import CoverArt from '../lib/components/CoverArt.svelte'
+  import AlbumGrid from '../lib/components/AlbumGrid.svelte'
+  import ViewToggle from '../lib/components/ViewToggle.svelte'
   import LoadingScreen from '../lib/components/LoadingScreen.svelte'
   import { playQueue } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
   import { timeOfDayGreeting } from '../lib/stores/greetingLogic.js'
+  import { viewModes } from '../lib/stores/viewMode.js'
 
   const greetings = [
     "Good listening.",
@@ -87,36 +89,21 @@
         <button class="shuffle-lib" onclick={() => playLibrary(true)} disabled={loadingLibrary}>
           ⇄ Shuffle library
         </button>
+        <ViewToggle view="home" />
       </div>
     </div>
 
     {#if recent.length}
       <section>
         <h2>Recently Added</h2>
-        <div class="shelf">
-          {#each recent as album}
-            <a class="album-card" href="#/album/{album.id}">
-              <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
-              <span class="title">{album.name}</span>
-              <span class="artist">{album.artist}</span>
-            </a>
-          {/each}
-        </div>
+        <AlbumGrid albums={recent} mode={$viewModes.home} subtitle="artist" />
       </section>
     {/if}
 
     {#if random.length}
       <section>
         <h2>Discover</h2>
-        <div class="shelf">
-          {#each random as album}
-            <a class="album-card" href="#/album/{album.id}">
-              <CoverArt id={album.id} artist={album.artist} album={album.name} alt={album.name} />
-              <span class="title">{album.name}</span>
-              <span class="artist">{album.artist}</span>
-            </a>
-          {/each}
-        </div>
+        <AlbumGrid albums={random} mode={$viewModes.home} subtitle="artist" />
       </section>
     {/if}
 
@@ -148,6 +135,7 @@
 
   .library-actions {
     display: flex;
+    align-items: center;
     gap: 8px;
     flex-shrink: 0;
   }
@@ -173,39 +161,6 @@
     text-transform: uppercase;
     color: var(--text-muted);
     margin-bottom: 14px;
-  }
-
-  .shelf {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 16px;
-  }
-
-  .album-card {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .album-card :global(.cover-art) {
-    border-radius: 6px;
-    transition: opacity 0.15s;
-  }
-  .album-card:hover :global(.cover-art) { opacity: 0.8; }
-
-  .title {
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .artist {
-    font-size: 12px;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .hint { color: var(--text-muted); }
