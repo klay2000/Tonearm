@@ -3,6 +3,7 @@
   import { auth, logout } from '../lib/stores/auth.js'
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
+  import { transcodeBitrate } from '../lib/stores/streaming.js'
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Follow sunrise/sunset at your location' },
@@ -24,6 +25,13 @@
   const normalizeVolumeOptions = [
     { value: false, label: 'Off', desc: 'Play tracks at their original volume' },
     { value: true,  label: 'On',  desc: 'Even out volume using ReplayGain tags from your library' },
+  ]
+
+  const transcodeBitrateOptions = [
+    { value: 0,   label: 'Original', desc: 'Stream files as stored, no transcoding' },
+    { value: 320, label: '320 kbps', desc: 'Transcode to 320kbps MP3' },
+    { value: 192, label: '192 kbps', desc: 'Transcode to 192kbps MP3' },
+    { value: 128, label: '128 kbps', desc: 'Transcode to 128kbps MP3, saves the most bandwidth' },
   ]
 </script>
 
@@ -93,6 +101,21 @@
             class="option"
             class:selected={$normalizeVolume === opt.value}
             onclick={() => normalizeVolume.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Streaming quality</span>
+      <div class="options">
+        {#each transcodeBitrateOptions as opt}
+          <button
+            class="option"
+            class:selected={$transcodeBitrate === opt.value}
+            onclick={() => transcodeBitrate.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>

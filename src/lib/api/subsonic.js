@@ -1,5 +1,6 @@
 import { get } from 'svelte/store'
 import { auth } from '../stores/auth.js'
+import { transcodeBitrate } from '../stores/streaming.js'
 
 // 1.16.1 is the minimum version that includes the ReplayGain fields on
 // song entries (used for volume normalization).
@@ -94,7 +95,9 @@ export async function getRandomSongs(size = 500) {
 }
 
 export function streamUrl(id) {
-  return buildUrl('stream', { id }).toString()
+  const bitrate = get(transcodeBitrate)
+  const params = bitrate > 0 ? { id, maxBitRate: bitrate, format: 'mp3' } : { id }
+  return buildUrl('stream', params).toString()
 }
 
 export function coverUrl(id, size = 256) {
