@@ -8,29 +8,38 @@
   let scrubbing = $state(false)
   let scrubRatio = $state(0)
 
-  // Web Audio graph for ReplayGain-based volume normalization. Created once
-  // the <audio> element exists; routes through a GainNode to the speakers.
+  // Web Audio graph for ReplayGain-based volume normalization. Created lazily
+  // on first playback (inside a user-gesture-driven effect) so the
+  // AudioContext starts in a "running" state rather than getting stuck
+  // "suspended" — which would otherwise silence all output.
   let audioCtx = null
   let gainNode = null
 
-  $effect(() => {
-    if (audio && !audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-      const sourceNode = audioCtx.createMediaElementSource(audio)
-      gainNode = audioCtx.createGain()
-      sourceNode.connect(gainNode)
-      gainNode.connect(audioCtx.destination)
-    }
-  })
+  function ensureAudioGraph() {
+    if (audioCtx) return
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const sourceNode = audioCtx.createMediaElementSource(audio)
+    gainNode = audioCtx.createGain()
+    sourceNode.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+    applyGain()
+  }
 
-  // Apply (or clear) ReplayGain whenever the track changes or the setting is toggled.
-  $effect(() => {
+  // Apply (or clear) ReplayGain for the current track.
+  function applyGain() {
+    if (!gainNode) return
     const track = $currentTrack
     const normalize = $normalizeVolume
-    if (!gainNode) return
     const target = normalize ? computeReplayGain(track) : 1
-    console.log('[replaygain]', track?.title, { normalize, replayGain: track?.replayGain, gain: target })
+    console.log('[replaygain]', track?.title, { normalize, replayGain: track?.replayGain, gain: target, audioCtxState: audioCtx?.state })
     gainNode.gain.setTargetAtTime(target, audioCtx.currentTime, 0.05)
+  }
+
+  // Re-apply whenever the track changes or the setting is toggled.
+  $effect(() => {
+    $currentTrack
+    $normalizeVolume
+    applyGain()
   })
 
   // React to track changes — guard src assignment so queue mutations
@@ -42,7 +51,11 @@
       const url = streamUrl(track.id)
       if (audio.src !== url) {
         audio.src = url
-        if ($playing) audio.play()
+        if ($playing) {
+          ensureAudioGraph()
+          audioCtx.resume()
+          audio.play().catch(() => {})
+        }
       }
     } else {
       audio.src = ''
@@ -53,7 +66,8 @@
   $effect(() => {
     if (!audio) return
     if ($playing) {
-      audioCtx?.resume()
+      ensureAudioGraph()
+      audioCtx.resume()
       audio.play().catch(() => {})
     } else {
       audio.pause()
