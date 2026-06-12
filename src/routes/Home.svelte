@@ -3,6 +3,8 @@
   import CoverArt from '../lib/components/CoverArt.svelte'
   import LoadingScreen from '../lib/components/LoadingScreen.svelte'
   import { playQueue } from '../lib/stores/player.js'
+  import { greetingMode } from '../lib/stores/greeting.js'
+  import { timeOfDayGreeting } from '../lib/stores/greetingLogic.js'
 
   const greetings = [
     "Good listening.",
@@ -17,9 +19,27 @@
     "Ears ready.",
     "Let's go.",
     "Finally.",
+    "Press play.",
+    "Turn it up.",
+    "Crank it.",
+    "Right on time.",
+    "Here for the music.",
+    "Sounds good already.",
+    "Welcome back.",
+    "Hello again.",
+    "All ears.",
+    "Tune in.",
+    "What's the mood today?",
+    "Let the music do the talking.",
+    "Queue it up.",
+    "Made it just in time.",
   ]
 
-  const greeting = greetings[Math.floor(Math.random() * greetings.length)]
+  const greeting = $derived(
+    $greetingMode === 'off' ? '' :
+    $greetingMode === 'simple' ? timeOfDayGreeting() :
+    greetings[Math.floor(Math.random() * greetings.length)]
+  )
 
   let recent = $state([])
   let random = $state([])

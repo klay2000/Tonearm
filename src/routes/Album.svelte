@@ -52,31 +52,35 @@
     </div>
   </div>
 
-  <table class="track-list">
-    <tbody>
-      {#each album.song ?? [] as track, i}
-        {@const active = isCurrentTrack(track)}
-        <tr
-          onclick={() => playFrom(i)}
-          class:active
-        >
-          <td class="num">
-            {#if active && $playing}
-              <span class="playing-icon">▶</span>
-            {:else}
-              {track.track ?? i + 1}
-            {/if}
-          </td>
-          <td class="title" class:accent={active}>{track.title}</td>
-          <td class="dur">{fmt(track.duration)}</td>
-          <td class="actions" onclick={e => e.stopPropagation()}>
-            <button title="Play next" onclick={() => insertNext(track)}>↑</button>
-            <button title="Add to queue" onclick={() => enqueue(track)}>+</button>
-          </td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
+  {#if album.song?.length}
+    <table class="track-list">
+      <tbody>
+        {#each album.song as track, i}
+          {@const active = isCurrentTrack(track)}
+          <tr
+            onclick={() => playFrom(i)}
+            class:active
+          >
+            <td class="num">
+              {#if active && $playing}
+                <span class="playing-icon">▶</span>
+              {:else}
+                {track.track ?? i + 1}
+              {/if}
+            </td>
+            <td class="title" class:accent={active}>{track.title}</td>
+            <td class="dur">{fmt(track.duration)}</td>
+            <td class="actions" onclick={e => e.stopPropagation()}>
+              <button title="Play next" onclick={() => insertNext(track)}>↑</button>
+              <button title="Add to queue" onclick={() => enqueue(track)}>+</button>
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  {:else}
+    <p class="muted">There's nothing here.</p>
+  {/if}
 {/if}
 
 <style>

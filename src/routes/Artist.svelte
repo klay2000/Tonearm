@@ -58,17 +58,21 @@
       </div>
     </div>
   </div>
-  <div class="album-grid">
-    {#each artist.album ?? [] as album}
-      <a class="album-card" href="#/album/{album.id}">
-        <CoverArt id={album.id} artist={artist.name} album={album.name} alt={album.name} />
-        <div class="album-info">
-          <span class="album-title">{album.name}</span>
-          {#if album.year}<span class="album-year">{album.year}</span>{/if}
-        </div>
-      </a>
-    {/each}
-  </div>
+  {#if artist.album?.length}
+    <div class="album-grid">
+      {#each artist.album as album}
+        <a class="album-card" href="#/album/{album.id}">
+          <CoverArt id={album.id} artist={artist.name} album={album.name} alt={album.name} />
+          <div class="album-info">
+            <span class="album-title">{album.name}</span>
+            {#if album.year}<span class="album-year">{album.year}</span>{/if}
+          </div>
+        </a>
+      {/each}
+    </div>
+  {:else}
+    <p class="muted">There's nothing here.</p>
+  {/if}
 {/if}
 
 <style>
