@@ -69,6 +69,7 @@
   const color = colorFor(name ?? '')
 
   let imgSrc = $state(null)
+  let loaded = $state(false)
   let el = $state(null)
 
   $effect(() => {
@@ -86,7 +87,7 @@
           if (!cancelled) imgSrc = url
         }
       } catch {}
-    }, { rootMargin: `${window.innerHeight * 2}px` })
+    }, { root: el.closest('main'), rootMargin: `${window.innerHeight}px` })
 
     observer.observe(el)
     return () => { cancelled = true; observer.disconnect() }
@@ -94,6 +95,13 @@
 </script>
 
 <div bind:this={el} class="wrapper" style="width:{size}px;height:{size}px">
+  <div
+    class="avatar initials"
+    style="background:{color};font-size:{Math.round(size * 0.36)}px"
+    aria-label={name}
+  >
+    {initials}
+  </div>
   {#if imgSrc}
     <img
       src={imgSrc}
@@ -101,15 +109,9 @@
       width={size}
       height={size}
       class="avatar"
+      class:loaded
+      onload={() => loaded = true}
     />
-  {:else}
-    <div
-      class="avatar initials"
-      style="background:{color};font-size:{Math.round(size * 0.36)}px"
-      aria-label={name}
-    >
-      {initials}
-    </div>
   {/if}
 </div>
 
@@ -135,5 +137,14 @@
     border-radius: 50%;
     width: 100%;
     height: 100%;
+  }
+  img.avatar {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  img.avatar.loaded {
+    opacity: 1;
   }
 </style>
