@@ -59,6 +59,7 @@ subsonic-client/
     │   │   ├── hashRoute.js   # pure #hash parsing (+ hashRoute.test.js)
     │   │   ├── theme.js       # dark/light/auto theme
     │   │   ├── sunTimes.js    # pure sunrise/sunset helpers (+ sunTimes.test.js)
+    │   │   ├── streaming.js   # transcode bitrate preference (localStorage)
     │   │   └── viewMode.js    # per-view list/shelf preference (localStorage)
     │   └── components/
     │       ├── Header.svelte
@@ -76,7 +77,7 @@ subsonic-client/
         ├── Album.svelte       # track list, play all
         ├── Search.svelte      # grouped results: artists / albums / songs
         ├── Login.svelte       # server URL + credentials
-        └── Settings.svelte    # theme preference, shuffle mode, volume normalization, build info
+        └── Settings.svelte    # theme preference, shuffle mode, volume normalization, streaming quality, build info
 ```
 
 ---
@@ -215,6 +216,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Queue: view, reorder (drag), remove, clear, click-to-play, play next / add to queue
 - [x] Shuffle: random-next mode or reorder-queue mode (configurable in Settings)
 - [x] Volume normalization: attenuates loud tracks by scaling the `<audio>` element's volume using per-track ReplayGain (configurable in Settings, off by default — requires ReplayGain tags in your library, e.g. from `rsgain`). Can only turn loud tracks down, not boost quiet ones (volume is capped at 1) — avoids routing through Web Audio, which silences cross-origin streams.
+- [x] Streaming quality: configurable in Settings (Original / 320 / 192 / 128 kbps). Non-original options request server-side transcoding to MP3 via `maxBitRate`/`format` on the Subsonic `stream` endpoint, to save bandwidth.
 - [x] Repeat: off / repeat-all / repeat-one
 - [x] Play artist / shuffle artist: fetches all albums in parallel and queues tracks
 - [x] Play / shuffle entire library
@@ -223,7 +225,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Dark/light mode toggle + auto theme by sunrise/sunset
 - [x] Login screen with server URL + credentials
 - [x] Player state (queue, volume, shuffle, repeat) persisted per account in localStorage
-- [x] Settings screen: theme preference, shuffle mode, volume normalization, build info (branch + commit)
+- [x] Settings screen: theme preference, shuffle mode, volume normalization, streaming quality, build info (branch + commit)
 - [x] Keyboard shortcuts
 - [x] App name: Tonearm
 - [x] Desktop app: Tauri v2 wrapper, builds as a Linux AppImage
