@@ -13,6 +13,13 @@
       .then(data => { indices = data; loading = false })
       .catch(e => { error = e.message; loading = false })
   })
+
+  // Plain #id anchors would be picked up by the hash router and navigate
+  // away, so scroll to the section manually instead.
+  function jumpTo(e, id) {
+    e.preventDefault()
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 </script>
 
 <div class="page-header">
@@ -27,7 +34,7 @@
 {:else if indices.length}
   <div class="jump-bar">
     {#each indices as idx}
-      <a href="#{idx.name}">{idx.name}</a>
+      <a href="#{idx.name}" onclick={(e) => jumpTo(e, idx.name)}>{idx.name}</a>
     {/each}
   </div>
 
