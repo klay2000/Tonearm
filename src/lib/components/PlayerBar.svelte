@@ -140,12 +140,15 @@
   volume={$volume}
 ></audio>
 
-{#if showQueue && $queue.length}
+{#if showQueue}
   <div class="queue-panel">
     <div class="queue-header">
       <span class="queue-title">Queue</span>
       <button onclick={() => showQueue = false} aria-label="Close queue">✕</button>
     </div>
+    {#if !$queue.length}
+      <p class="queue-empty">There's nothing here.</p>
+    {:else}
     <div class="queue-list">
       {#each $queue as track, i (track.id)}
         <div
@@ -175,6 +178,7 @@
     </div>
     {#if $queue.length > 1}
       <button class="queue-clear" onclick={clearQueue} aria-label="Clear queue">Clear</button>
+    {/if}
     {/if}
   </div>
 {/if}
@@ -536,6 +540,7 @@
   .queue-title { font-weight: 600; font-size: 13px; }
   .queue-header button { opacity: 0.5; font-size: 13px; }
   .queue-header button:hover { opacity: 1; }
+  .queue-empty { padding: 24px 16px; color: var(--text-muted); font-size: 13px; }
   .queue-clear {
     position: absolute;
     bottom: 12px;

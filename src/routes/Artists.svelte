@@ -17,7 +17,7 @@
   <p class="muted">Loading artists…</p>
 {:else if error}
   <p class="error">Error: {error}</p>
-{:else}
+{:else if indices.length}
   <div class="jump-bar">
     {#each indices as idx}
       <a href="#{idx.name}">{idx.name}</a>
@@ -38,6 +38,8 @@
       </div>
     </section>
   {/each}
+{:else}
+  <p class="muted">There's nothing here.</p>
 {/if}
 
 <style>

@@ -2,11 +2,18 @@
   import { themePref } from '../lib/stores/theme.js'
   import { auth, logout } from '../lib/stores/auth.js'
   import { shuffleMode } from '../lib/stores/player.js'
+  import { greetingMode } from '../lib/stores/greeting.js'
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Follow sunrise/sunset at your location' },
     { value: 'light', label: 'Light', desc: 'Always light' },
     { value: 'dark',  label: 'Dark',  desc: 'Always dark' },
+  ]
+
+  const greetingModeOptions = [
+    { value: 'random', label: 'Random messages', desc: 'A different greeting each visit' },
+    { value: 'simple', label: 'Time of day', desc: '"Good morning" / "Good afternoon" / etc.' },
+    { value: 'off',    label: 'Off',          desc: "Don't show a greeting" },
   ]
 
   const shuffleModeOptions = [
@@ -28,6 +35,25 @@
             class="option"
             class:selected={$themePref === opt.value}
             onclick={() => themePref.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Home</h2>
+    <div class="field">
+      <span class="label">Greeting</span>
+      <div class="options">
+        {#each greetingModeOptions as opt}
+          <button
+            class="option"
+            class:selected={$greetingMode === opt.value}
+            onclick={() => greetingMode.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>
