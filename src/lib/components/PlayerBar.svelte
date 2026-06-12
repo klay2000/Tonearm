@@ -29,6 +29,7 @@
     const normalize = $normalizeVolume
     if (!gainNode) return
     const target = normalize ? computeReplayGain(track) : 1
+    console.log('[replaygain]', track?.title, { normalize, replayGain: track?.replayGain, gain: target })
     gainNode.gain.setTargetAtTime(target, audioCtx.currentTime, 0.05)
   })
 
