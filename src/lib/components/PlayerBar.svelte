@@ -10,6 +10,13 @@
   let scrubbing = $state(false)
   let scrubRatio = $state(0)
 
+  // True once the duration store holds the server-reported length for the
+  // current track. While true, onTimeUpdate leaves it alone — audio.duration
+  // for a transcoded/chunked stream starts as a rough estimate and creeps
+  // toward the real value as more of the stream downloads, which would
+  // otherwise overwrite the already-correct figure.
+  let durationKnown = $state(false)
+
   // ReplayGain volume normalization — applied by scaling the <audio>
   // element's own volume rather than via Web Audio. Cross-origin streams
   // (the browser talks directly to Gonic, a different origin) would be
@@ -30,7 +37,9 @@
         currentTime.set(0)
         // Seed with the server-reported duration so the display shows a
         // real number immediately. <audio>.duration is unreliable while a
-        // transcoded/chunked stream is loading (often Infinity or NaN).
+        // transcoded/chunked stream is loading (often Infinity, NaN, or a
+        // rough estimate that creeps toward the real value over time).
+        durationKnown = !!track.duration
         duration.set(track.duration || 0)
         if ($playing) audio.play().catch(() => {})
       }
@@ -57,7 +66,7 @@
 
   function onTimeUpdate() {
     currentTime.set(audio.currentTime)
-    duration.set(resolveDuration(audio.duration, get(duration)))
+    if (!durationKnown) duration.set(resolveDuration(audio.duration, get(duration)))
   }
 
   function onEnded() {
