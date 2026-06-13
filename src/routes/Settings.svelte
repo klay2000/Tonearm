@@ -5,6 +5,7 @@
   import { greetingMode } from '../lib/stores/greeting.js'
   import { transcodeBitrate } from '../lib/stores/streaming.js'
   import { albumArtShowPlayerBar } from '../lib/stores/albumArtMode.js'
+  import { isTauri } from '../lib/api/albumArtWindow.js'
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Follow sunrise/sunset at your location' },
@@ -129,21 +130,23 @@
         {/each}
       </div>
     </div>
-    <div class="field">
-      <span class="label">Album art mode player bar</span>
-      <div class="options">
-        {#each albumArtPlayerBarOptions as opt}
-          <button
-            class="option"
-            class:selected={$albumArtShowPlayerBar === opt.value}
-            onclick={() => albumArtShowPlayerBar.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
+    {#if !isTauri}
+      <div class="field">
+        <span class="label">Album art mode player bar</span>
+        <div class="options">
+          {#each albumArtPlayerBarOptions as opt}
+            <button
+              class="option"
+              class:selected={$albumArtShowPlayerBar === opt.value}
+              onclick={() => albumArtShowPlayerBar.set(opt.value)}
+            >
+              <span class="opt-label">{opt.label}</span>
+              <span class="opt-desc">{opt.desc}</span>
+            </button>
+          {/each}
+        </div>
       </div>
-    </div>
+    {/if}
   </section>
 
   <section>

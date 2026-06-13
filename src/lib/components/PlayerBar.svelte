@@ -538,6 +538,7 @@
     padding: 4px;
     border-radius: 4px;
     margin-left: 14px;
+    outline: none;
   }
   .queue-btn:hover { opacity: 1; }
   .queue-btn-active { opacity: 1; color: var(--accent); }

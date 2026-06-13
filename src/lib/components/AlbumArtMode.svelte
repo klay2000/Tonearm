@@ -1,15 +1,15 @@
 <script>
-  import { currentTrack, playing, currentTime, playNext, playPrev, togglePlay } from '../stores/player.js'
+  import { currentTrack, playing, playNext, playPrev, togglePlay } from '../stores/player.js'
   import { albumArtShowPlayerBar, toggleAlbumArtMode } from '../stores/albumArtMode.js'
+  import { isTauri } from '../api/albumArtWindow.js'
   import { coverUrl } from '../api/subsonic.js'
 
   // Touch devices have no hover, so tapping the art toggles the controls too.
   let showControls = $state(false)
 
-  function stop() {
-    playing.set(false)
-    currentTime.set(0)
-  }
+  // On desktop the OS window itself shrinks to a small square for album art
+  // mode, so there's no room to also reserve space for the player bar.
+  const showPlayerBar = $derived($albumArtShowPlayerBar && !isTauri)
 
   function onKeydown(e) {
     if (e.key === 'Escape') toggleAlbumArtMode()
@@ -20,14 +20,15 @@
 
 <div
   class="album-art-mode"
-  class:with-player-bar={$albumArtShowPlayerBar}
+  class:with-player-bar={showPlayerBar}
   onclick={() => showControls = !showControls}
   role="presentation"
+  data-tauri-drag-region
 >
   {#if $currentTrack}
-    <img src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 600)} alt="" class="art" />
+    <img src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 600)} alt="" class="art" data-tauri-drag-region />
   {:else}
-    <div class="art empty"></div>
+    <div class="art empty" data-tauri-drag-region></div>
   {/if}
 
   <div class="overlay" class:visible={showControls}>
@@ -54,11 +55,6 @@
             <polygon points="5,2 14,8 5,14"/>
           </svg>
         {/if}
-      </button>
-      <button onclick={stop} aria-label="Stop">
-        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
-          <rect x="3" y="3" width="10" height="10" rx="1"/>
-        </svg>
       </button>
       <button onclick={playNext} aria-label="Next">
         <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
@@ -88,7 +84,7 @@
   .art {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     background: var(--border);
   }
   .art.empty { background: var(--surface); }
@@ -104,6 +100,9 @@
     opacity: 0;
     transition: opacity 0.15s;
     background: linear-gradient(to top, rgba(0,0,0,0.55), transparent 45%);
+    /* Let clicks/drags on the background pass through to the art underneath
+       (which is the drag region); only the controls themselves are interactive. */
+    pointer-events: none;
   }
   .album-art-mode:hover .overlay,
   .overlay.visible {
@@ -117,6 +116,7 @@
     color: white;
     opacity: 0.8;
     padding: 6px;
+    pointer-events: auto;
   }
   .close-btn:hover { opacity: 1; }
 
@@ -125,6 +125,7 @@
     align-items: center;
     gap: 24px;
     cursor: default;
+    pointer-events: auto;
   }
   .controls button {
     color: white;
