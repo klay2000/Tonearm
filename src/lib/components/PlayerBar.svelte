@@ -2,6 +2,8 @@
   import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat, normalizeVolume } from '../stores/player.js'
   import { coverUrl, streamUrl } from '../api/subsonic.js'
   import { computeReplayGain } from '../stores/replayGain.js'
+  import { fmt, resolveDuration } from '../stores/playerLogic.js'
+  import { get } from 'svelte/store'
 
   let audio = $state(null)
   let showQueue = $state(false)
@@ -55,11 +57,7 @@
 
   function onTimeUpdate() {
     currentTime.set(audio.currentTime)
-    // Ignore Infinity/NaN, which <audio>.duration reports while a
-    // transcoded/chunked stream's real length is still unknown.
-    if (Number.isFinite(audio.duration) && audio.duration > 0) {
-      duration.set(audio.duration)
-    }
+    duration.set(resolveDuration(audio.duration, get(duration)))
   }
 
   function onEnded() {
@@ -105,13 +103,6 @@
   function onVolumeChange(e) {
     volume.set(Number(e.target.value))
     if (muted) { muted = false; if (audio) audio.muted = false }
-  }
-
-  function fmt(secs) {
-    if (!secs || !isFinite(secs)) return '0:00'
-    const m = Math.floor(secs / 60)
-    const s = Math.floor(secs % 60).toString().padStart(2, '0')
-    return `${m}:${s}`
   }
 
   let progress = $derived(scrubbing ? scrubRatio * 100 : ($duration ? ($currentTime / $duration) * 100 : 0))
