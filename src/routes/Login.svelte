@@ -1,10 +1,13 @@
 <script>
+  import { get } from 'svelte/store'
   import { testConnection } from '../lib/api/subsonic.js'
-  import { login } from '../lib/stores/auth.js'
+  import { login, authError, lastSession } from '../lib/stores/auth.js'
   import LoadingScreen from '../lib/components/LoadingScreen.svelte'
 
-  let serverUrl = $state('http://10.0.0.10:4747')
-  let username = $state('')
+  const saved = get(lastSession)
+
+  let serverUrl = $state(saved?.serverUrl ?? 'http://10.0.0.10:4747')
+  let username = $state(saved?.username ?? '')
   let password = $state('')
   let error = $state(null)
   let loading = $state(false)
@@ -45,6 +48,8 @@
         </label>
         {#if error}
           <p class="error">{error}</p>
+        {:else if $authError}
+          <p class="error">{$authError}</p>
         {/if}
         <button type="submit">Connect</button>
       </form>
