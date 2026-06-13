@@ -26,6 +26,10 @@
       if (audio.src !== url) {
         audio.src = url
         currentTime.set(0)
+        // Seed with the server-reported duration so the display shows a
+        // real number immediately. <audio>.duration is unreliable while a
+        // transcoded/chunked stream is loading (often Infinity or NaN).
+        duration.set(track.duration || 0)
         if ($playing) audio.play().catch(() => {})
       }
     } else {
@@ -51,7 +55,11 @@
 
   function onTimeUpdate() {
     currentTime.set(audio.currentTime)
-    duration.set(audio.duration || 0)
+    // Ignore Infinity/NaN, which <audio>.duration reports while a
+    // transcoded/chunked stream's real length is still unknown.
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      duration.set(audio.duration)
+    }
   }
 
   function onEnded() {
@@ -100,7 +108,7 @@
   }
 
   function fmt(secs) {
-    if (!secs || isNaN(secs)) return '0:00'
+    if (!secs || !isFinite(secs)) return '0:00'
     const m = Math.floor(secs / 60)
     const s = Math.floor(secs % 60).toString().padStart(2, '0')
     return `${m}:${s}`
