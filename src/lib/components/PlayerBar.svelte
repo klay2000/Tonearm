@@ -2,11 +2,20 @@
   import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat, normalizeVolume } from '../stores/player.js'
   import { coverUrl, streamUrl } from '../api/subsonic.js'
   import { computeReplayGain } from '../stores/replayGain.js'
+  import { fmt, resolveDuration } from '../stores/playerLogic.js'
+  import { get } from 'svelte/store'
 
   let audio = $state(null)
   let showQueue = $state(false)
   let scrubbing = $state(false)
   let scrubRatio = $state(0)
+
+  // True once the duration store holds the server-reported length for the
+  // current track. While true, onTimeUpdate leaves it alone — audio.duration
+  // for a transcoded/chunked stream starts as a rough estimate and creeps
+  // toward the real value as more of the stream downloads, which would
+  // otherwise overwrite the already-correct figure.
+  let durationKnown = $state(false)
 
   // ReplayGain volume normalization — applied by scaling the <audio>
   // element's own volume rather than via Web Audio. Cross-origin streams
@@ -26,6 +35,12 @@
       if (audio.src !== url) {
         audio.src = url
         currentTime.set(0)
+        // Seed with the server-reported duration so the display shows a
+        // real number immediately. <audio>.duration is unreliable while a
+        // transcoded/chunked stream is loading (often Infinity, NaN, or a
+        // rough estimate that creeps toward the real value over time).
+        durationKnown = !!track.duration
+        duration.set(track.duration || 0)
         if ($playing) audio.play().catch(() => {})
       }
     } else {
@@ -51,7 +66,7 @@
 
   function onTimeUpdate() {
     currentTime.set(audio.currentTime)
-    duration.set(audio.duration || 0)
+    if (!durationKnown) duration.set(resolveDuration(audio.duration, get(duration)))
   }
 
   function onEnded() {
@@ -97,13 +112,6 @@
   function onVolumeChange(e) {
     volume.set(Number(e.target.value))
     if (muted) { muted = false; if (audio) audio.muted = false }
-  }
-
-  function fmt(secs) {
-    if (!secs || isNaN(secs)) return '0:00'
-    const m = Math.floor(secs / 60)
-    const s = Math.floor(secs % 60).toString().padStart(2, '0')
-    return `${m}:${s}`
   }
 
   let progress = $derived(scrubbing ? scrubRatio * 100 : ($duration ? ($currentTime / $duration) * 100 : 0))
