@@ -1,6 +1,7 @@
 import { get } from 'svelte/store'
-import { auth } from '../stores/auth.js'
+import { auth, expireSession } from '../stores/auth.js'
 import { transcodeBitrate } from '../stores/streaming.js'
+import { parseSubsonicResponse, AuthError } from './subsonicLogic.js'
 
 // 1.16.1 is the minimum version that includes the ReplayGain fields on
 // song entries (used for volume normalization).
@@ -25,9 +26,14 @@ async function request(endpoint, params = {}) {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
-  const root = data['subsonic-response']
-  if (root.status === 'failed') throw new Error(root.error?.message ?? 'Subsonic error')
-  return root
+  try {
+    return parseSubsonicResponse(data['subsonic-response'])
+  } catch (err) {
+    // A stale password leaves every request failing. Log out so the app
+    // falls back to the login screen instead of every view erroring out.
+    if (err instanceof AuthError) expireSession()
+    throw err
+  }
 }
 
 export async function testConnection(serverUrl, username, password) {
