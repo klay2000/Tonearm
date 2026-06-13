@@ -4,6 +4,7 @@
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
   import { transcodeBitrate } from '../lib/stores/streaming.js'
+  import { albumArtShowPlayerBar } from '../lib/stores/albumArtMode.js'
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Follow sunrise/sunset at your location' },
@@ -32,6 +33,11 @@
     { value: 320, label: '320 kbps', desc: 'Transcode to 320kbps MP3' },
     { value: 192, label: '192 kbps', desc: 'Transcode to 192kbps MP3' },
     { value: 128, label: '128 kbps', desc: 'Transcode to 128kbps MP3, saves the most bandwidth' },
+  ]
+
+  const albumArtPlayerBarOptions = [
+    { value: true,  label: 'Visible', desc: 'Keep the seek bar, volume and queue reachable' },
+    { value: false, label: 'Hidden',  desc: 'Show only the cover art and hover controls' },
   ]
 </script>
 
@@ -116,6 +122,21 @@
             class="option"
             class:selected={$transcodeBitrate === opt.value}
             onclick={() => transcodeBitrate.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Album art mode player bar</span>
+      <div class="options">
+        {#each albumArtPlayerBarOptions as opt}
+          <button
+            class="option"
+            class:selected={$albumArtShowPlayerBar === opt.value}
+            onclick={() => albumArtShowPlayerBar.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>

@@ -4,11 +4,14 @@
   import { get } from 'svelte/store'
   import { isLoggedIn } from './lib/stores/auth.js'
   import { ping } from './lib/api/subsonic.js'
+  import { albumArtMode } from './lib/stores/albumArtMode.js'
+  import { enterAlbumArtWindow, exitAlbumArtWindow } from './lib/api/albumArtWindow.js'
   import Login from './routes/Login.svelte'
   import LoadingScreen from './lib/components/LoadingScreen.svelte'
   import Header from './lib/components/Header.svelte'
   import Sidebar from './lib/components/Sidebar.svelte'
   import PlayerBar from './lib/components/PlayerBar.svelte'
+  import AlbumArtMode from './lib/components/AlbumArtMode.svelte'
   import Home from './routes/Home.svelte'
   import Artists from './routes/Artists.svelte'
   import Artist from './routes/Artist.svelte'
@@ -36,6 +39,13 @@
   }
 
   let { component: Page, props } = $derived(route(path, params))
+
+  // On desktop, also shrink the OS window down to a small square while
+  // Album Art Mode is active (no-op in the browser).
+  $effect(() => {
+    if ($albumArtMode) enterAlbumArtWindow()
+    else exitAlbumArtWindow()
+  })
 
   function onKeydown(e) {
     const tag = document.activeElement?.tagName
@@ -74,6 +84,9 @@
     </div>
     <PlayerBar />
   </div>
+  {#if $albumArtMode}
+    <AlbumArtMode />
+  {/if}
 {:else}
   <Login />
 {/if}
