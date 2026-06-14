@@ -5,7 +5,7 @@
   import { isLoggedIn } from './lib/stores/auth.js'
   import { ping } from './lib/api/subsonic.js'
   import { albumArtMode } from './lib/stores/albumArtMode.js'
-  import { enterAlbumArtWindow, exitAlbumArtWindow } from './lib/api/albumArtWindow.js'
+  import { enterAlbumArtWindow, exitAlbumArtWindow, isTauri } from './lib/api/albumArtWindow.js'
   import Login from './routes/Login.svelte'
   import LoadingScreen from './lib/components/LoadingScreen.svelte'
   import Header from './lib/components/Header.svelte'
@@ -47,6 +47,13 @@
     else exitAlbumArtWindow()
   })
 
+  // On Tauri, hide the main UI entirely while Album Art Mode is active.
+  // Any of its scrollable regions (e.g. `main`) can otherwise trigger a
+  // WebKitGTK overlay scrollbar during the window resize — those render
+  // above the page's CSS layers, so AlbumArtMode's z-index can't cover
+  // them. Removing the content from layout avoids that altogether.
+  const hideApp = $derived($albumArtMode && isTauri)
+
   function onKeydown(e) {
     const tag = document.activeElement?.tagName
     if (tag === 'INPUT' || tag === 'TEXTAREA') return
@@ -74,7 +81,7 @@
     <LoadingScreen message="Connecting to your library…" />
   </div>
 {:else if $isLoggedIn}
-  <div class="app">
+  <div class="app" class:hidden={hideApp}>
     <Header />
     <div class="body">
       <Sidebar />
@@ -93,6 +100,7 @@
 
 <style>
   :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }
+  :global(html), :global(body) { overflow: hidden; height: 100%; }
   :global(:root) {
     --bg:        #f5f5f5;
     --surface:   #ffffff;
@@ -128,6 +136,9 @@
     grid-template-rows: var(--header-h) 1fr var(--player-h);
     height: 100dvh;
     overflow: hidden;
+  }
+  .app.hidden {
+    display: none;
   }
   .body {
     display: grid;

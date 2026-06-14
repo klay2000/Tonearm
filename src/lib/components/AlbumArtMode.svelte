@@ -1,15 +1,10 @@
 <script>
   import { currentTrack, playing, playNext, playPrev, togglePlay } from '../stores/player.js'
-  import { albumArtShowPlayerBar, toggleAlbumArtMode } from '../stores/albumArtMode.js'
-  import { isTauri } from '../api/albumArtWindow.js'
+  import { toggleAlbumArtMode } from '../stores/albumArtMode.js'
   import { coverUrl } from '../api/subsonic.js'
 
   // Touch devices have no hover, so tapping the art toggles the controls too.
   let showControls = $state(false)
-
-  // On desktop the OS window itself shrinks to a small square for album art
-  // mode, so there's no room to also reserve space for the player bar.
-  const showPlayerBar = $derived($albumArtShowPlayerBar && !isTauri)
 
   function onKeydown(e) {
     if (e.key === 'Escape') toggleAlbumArtMode()
@@ -20,7 +15,6 @@
 
 <div
   class="album-art-mode"
-  class:with-player-bar={showPlayerBar}
   onclick={() => showControls = !showControls}
   role="presentation"
   data-tauri-drag-region
@@ -79,7 +73,6 @@
     justify-content: center;
     cursor: pointer;
   }
-  .album-art-mode.with-player-bar { bottom: var(--player-h); }
 
   .art {
     width: 100%;

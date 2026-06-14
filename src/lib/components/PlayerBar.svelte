@@ -4,6 +4,7 @@
   import { computeReplayGain } from '../stores/replayGain.js'
   import { fmt, resolveDuration } from '../stores/playerLogic.js'
   import { toggleAlbumArtMode } from '../stores/albumArtMode.js'
+  import { isTauri } from '../api/albumArtWindow.js'
   import { get } from 'svelte/store'
 
   let audio = $state(null)
@@ -326,17 +327,18 @@
   </div>
 
   <div class="right">
+    {#if isTauri}
     <button
       class="queue-btn"
       onclick={toggleAlbumArtMode}
       aria-label="Album art mode"
-      title="Album art mode"
     >
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
         <rect x="2" y="2" width="12" height="12" rx="1.5"/>
         <circle cx="8" cy="8" r="2.5"/>
       </svg>
     </button>
+    {/if}
     <button
       class="queue-btn"
       class:queue-btn-active={showQueue}

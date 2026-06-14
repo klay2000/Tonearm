@@ -7,8 +7,3 @@ export const albumArtMode = writable(false)
 export function toggleAlbumArtMode() {
   albumArtMode.update(v => !v)
 }
-
-// Whether the player bar (seek, volume, queue) stays visible underneath
-// the cover art while Album Art Mode is active.
-export const albumArtShowPlayerBar = writable(localStorage.getItem('subsonic_album_art_player_bar') !== 'false')
-albumArtShowPlayerBar.subscribe(v => localStorage.setItem('subsonic_album_art_player_bar', String(v)))

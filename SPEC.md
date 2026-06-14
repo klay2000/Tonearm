@@ -53,7 +53,7 @@ subsonic-client/
     │   │   └── albumArtWindow.js # Tauri-only: shrink/restore the OS window for Album Art Mode
     │   ├── stores/
     │   │   ├── auth.js        # login state + credentials (localStorage)
-    │   │   ├── albumArtMode.js # album art mode toggle + player-bar-visibility preference
+    │   │   ├── albumArtMode.js # album art mode toggle
     │   │   ├── player.js      # queue, playback state, volume
     │   │   ├── queueLogic.js  # pure queue-index helpers (+ queueLogic.test.js)
     │   │   ├── replayGain.js  # pure ReplayGain-to-gain math (+ replayGain.test.js)
@@ -228,8 +228,8 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Dark/light mode toggle + auto theme by sunrise/sunset
 - [x] Login screen with server URL + credentials
 - [x] Player state (queue, volume, shuffle, repeat) persisted per account in localStorage
-- [x] Settings screen: theme preference, shuffle mode, volume normalization, streaming quality, album art mode player bar, build info (branch + commit)
-- [x] Album art mode: collapses the UI to cover art with hover play/pause/stop/next/prev controls; also shrinks the OS window on desktop
+- [x] Settings screen: theme preference, shuffle mode, volume normalization, streaming quality, build info (branch + commit)
+- [x] Album art mode (desktop app only): collapses the UI to cover art with hover play/pause/stop/next/prev controls, and shrinks the OS window
 - [x] Keyboard shortcuts
 - [x] App name: Tonearm
 - [x] Desktop app: Tauri v2 wrapper, builds as a Linux AppImage
