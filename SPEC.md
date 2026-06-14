@@ -49,9 +49,11 @@ subsonic-client/
     ├── lib/
     │   ├── api/
     │   │   ├── subsonic.js     # Subsonic API client
-    │   │   └── musicbrainz.js  # MusicBrainz lookups (artist image fallback)
+    │   │   ├── musicbrainz.js  # MusicBrainz lookups (artist image fallback)
+    │   │   └── albumArtWindow.js # Tauri-only: shrink/restore the OS window for Album Art Mode
     │   ├── stores/
     │   │   ├── auth.js        # login state + credentials (localStorage)
+    │   │   ├── albumArtMode.js # album art mode toggle
     │   │   ├── player.js      # queue, playback state, volume
     │   │   ├── queueLogic.js  # pure queue-index helpers (+ queueLogic.test.js)
     │   │   ├── replayGain.js  # pure ReplayGain-to-gain math (+ replayGain.test.js)
@@ -69,6 +71,7 @@ subsonic-client/
     │       ├── CoverArt.svelte
     │       ├── AlbumGrid.svelte    # renders albums as a shelf (grid) or list
     │       ├── ViewToggle.svelte   # shelf/list switcher for a given view
+    │       ├── AlbumArtMode.svelte # cover-art-only overlay with hover controls
     │       └── LoadingScreen.svelte
     └── routes/
         ├── Home.svelte        # greeting + recently added + discover shelves
@@ -77,7 +80,7 @@ subsonic-client/
         ├── Album.svelte       # track list, play all
         ├── Search.svelte      # grouped results: artists / albums / songs
         ├── Login.svelte       # server URL + credentials
-        └── Settings.svelte    # theme preference, shuffle mode, volume normalization, streaming quality, build info
+        └── Settings.svelte    # theme preference, shuffle mode, volume normalization, streaming quality, album art mode, build info
 ```
 
 ---
@@ -226,6 +229,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Login screen with server URL + credentials
 - [x] Player state (queue, volume, shuffle, repeat) persisted per account in localStorage
 - [x] Settings screen: theme preference, shuffle mode, volume normalization, streaming quality, build info (branch + commit)
+- [x] Album art mode (desktop app only): collapses the UI to cover art with hover play/pause/stop/next/prev controls, and shrinks the OS window
 - [x] Keyboard shortcuts
 - [x] App name: Tonearm
 - [x] Desktop app: Tauri v2 wrapper, builds as a Linux AppImage

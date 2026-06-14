@@ -4,11 +4,14 @@
   import { get } from 'svelte/store'
   import { isLoggedIn } from './lib/stores/auth.js'
   import { ping } from './lib/api/subsonic.js'
+  import { albumArtMode } from './lib/stores/albumArtMode.js'
+  import { enterAlbumArtWindow, exitAlbumArtWindow, isTauri } from './lib/api/albumArtWindow.js'
   import Login from './routes/Login.svelte'
   import LoadingScreen from './lib/components/LoadingScreen.svelte'
   import Header from './lib/components/Header.svelte'
   import Sidebar from './lib/components/Sidebar.svelte'
   import PlayerBar from './lib/components/PlayerBar.svelte'
+  import AlbumArtMode from './lib/components/AlbumArtMode.svelte'
   import Home from './routes/Home.svelte'
   import Artists from './routes/Artists.svelte'
   import Artist from './routes/Artist.svelte'
@@ -37,6 +40,20 @@
 
   let { component: Page, props } = $derived(route(path, params))
 
+  // On desktop, also shrink the OS window down to a small square while
+  // Album Art Mode is active (no-op in the browser).
+  $effect(() => {
+    if ($albumArtMode) enterAlbumArtWindow()
+    else exitAlbumArtWindow()
+  })
+
+  // On Tauri, hide the main UI entirely while Album Art Mode is active.
+  // Any of its scrollable regions (e.g. `main`) can otherwise trigger a
+  // WebKitGTK overlay scrollbar during the window resize — those render
+  // above the page's CSS layers, so AlbumArtMode's z-index can't cover
+  // them. Removing the content from layout avoids that altogether.
+  const hideApp = $derived($albumArtMode && isTauri)
+
   function onKeydown(e) {
     const tag = document.activeElement?.tagName
     if (tag === 'INPUT' || tag === 'TEXTAREA') return
@@ -64,7 +81,7 @@
     <LoadingScreen message="Connecting to your library…" />
   </div>
 {:else if $isLoggedIn}
-  <div class="app">
+  <div class="app" class:hidden={hideApp}>
     <Header />
     <div class="body">
       <Sidebar />
@@ -74,12 +91,16 @@
     </div>
     <PlayerBar />
   </div>
+  {#if $albumArtMode}
+    <AlbumArtMode />
+  {/if}
 {:else}
   <Login />
 {/if}
 
 <style>
   :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }
+  :global(html), :global(body) { overflow: hidden; height: 100%; }
   :global(:root) {
     --bg:        #f5f5f5;
     --surface:   #ffffff;
@@ -115,6 +136,9 @@
     grid-template-rows: var(--header-h) 1fr var(--player-h);
     height: 100dvh;
     overflow: hidden;
+  }
+  .app.hidden {
+    display: none;
   }
   .body {
     display: grid;
