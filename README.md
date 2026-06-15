@@ -16,7 +16,7 @@ A minimal, modern, self-hosted music client for [Gonic](https://github.com/sentr
 - Queue management: reorder by drag, remove tracks, clear queue, play next
 - Album art scraping from TheAudioDB and Cover Art Archive when server has none
 - Artist avatars sourced from TheAudioDB and Wikimedia
-- Auto dark/light theme by sunrise/sunset (or set manually)
+- Auto dark/light theme by user-configured start times (or set manually)
 - Player state (queue, volume, shuffle, repeat) persisted across sessions
 - Volume normalization: attenuates loud tracks using ReplayGain tags from your library (optional)
 - Settings screen: theme preference, shuffle mode, volume normalization, build info

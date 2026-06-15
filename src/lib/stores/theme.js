@@ -1,5 +1,6 @@
 import { writable, get } from 'svelte/store'
-import { localDateString, sunriseSunsetUrl, isDarkAt } from './sunTimes.js'
+import { isDarkAt } from './themeSchedule.js'
+import { darkStart, lightStart } from './themeTimes.js'
 
 const KEY = 'subsonic_theme'
 
@@ -9,17 +10,6 @@ themePref.subscribe(v => localStorage.setItem(KEY, v))
 
 export const isDark = writable(false)
 
-function systemDark() {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-}
-
-async function sunriseSunset(lat, lon, dateStr) {
-  const res = await fetch(sunriseSunsetUrl(lat, lon, dateStr))
-  const data = await res.json()
-  if (data.status !== 'OK') throw new Error('sunrise-sunset API error')
-  return { rise: new Date(data.results.sunrise), set: new Date(data.results.sunset) }
-}
-
 function setDark(dark) {
   const html = document.documentElement
   html.classList.toggle('dark', dark)
@@ -27,24 +17,17 @@ function setDark(dark) {
   isDark.set(dark)
 }
 
-export async function applyTheme(pref) {
+export function applyTheme(pref) {
   if (pref === 'dark') { setDark(true); return }
   if (pref === 'light') { setDark(false); return }
 
-  // auto: apply system pref immediately, then refine with geolocation
-  setDark(systemDark())
-  try {
-    const { latitude, longitude } = await new Promise((res, rej) =>
-      navigator.geolocation.getCurrentPosition(p => res(p.coords), rej, { timeout: 5000 })
-    )
-    const now = new Date()
-    const { rise, set } = await sunriseSunset(latitude, longitude, localDateString(now))
-    setDark(isDarkAt(now, rise, set))
-  } catch {
-    // geolocation denied or failed — system pref already applied above
-  }
+  // auto: use the user-configured dark/light start times
+  setDark(isDarkAt(new Date(), get(darkStart), get(lightStart)))
 }
 
-// Apply on pref change and re-check hourly (sun position shifts)
+// Apply on pref change, on time-setting change, and re-check hourly so the
+// theme flips automatically when crossing a configured time.
 themePref.subscribe(pref => applyTheme(pref))
+darkStart.subscribe(() => applyTheme(get(themePref)))
+lightStart.subscribe(() => applyTheme(get(themePref)))
 setInterval(() => applyTheme(get(themePref)), 3_600_000)

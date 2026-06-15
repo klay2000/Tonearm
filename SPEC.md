@@ -63,7 +63,8 @@ subsonic-client/
     │   │   ├── router.js      # hash-based router
     │   │   ├── hashRoute.js   # pure #hash parsing (+ hashRoute.test.js)
     │   │   ├── theme.js       # dark/light/auto theme
-    │   │   ├── sunTimes.js    # pure sunrise/sunset helpers (+ sunTimes.test.js)
+    │   │   ├── themeSchedule.js # pure scheduled dark/light helpers (+ themeSchedule.test.js)
+    │   │   ├── themeTimes.js  # dark/light start-time preferences (localStorage)
     │   │   ├── streaming.js   # transcode bitrate preference (localStorage)
     │   │   └── viewMode.js    # per-view list/shelf preference (localStorage)
     │   └── components/
@@ -120,7 +121,7 @@ docker run -d -p 8080:80 tonearm
 
 ## Testing
 
-`npm test` runs `src/**/*.test.js` with Node's built-in test runner (`node --test`) — no extra dependency. Tests live alongside the modules they cover (e.g. `src/lib/stores/sunTimes.test.js`, `queueLogic.test.js`, `hashRoute.test.js`); favor extracting pure logic into DOM-free modules so it can be tested this way. Coverage is intentionally partial — pure logic only, no Svelte component or browser-glue tests — and full coverage isn't a goal; when a bug is found, add a regression test for the broken logic alongside the fix.
+`npm test` runs `src/**/*.test.js` with Node's built-in test runner (`node --test`) — no extra dependency. Tests live alongside the modules they cover (e.g. `src/lib/stores/themeSchedule.test.js`, `queueLogic.test.js`, `hashRoute.test.js`); favor extracting pure logic into DOM-free modules so it can be tested this way. Coverage is intentionally partial — pure logic only, no Svelte component or browser-glue tests — and full coverage isn't a goal; when a bug is found, add a regression test for the broken logic alongside the fix.
 
 ---
 
@@ -229,7 +230,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Play / shuffle entire library
 - [x] Album art scraping: TheAudioDB → MusicBrainz → Cover Art Archive fallback
 - [x] Artist avatars: lazy-loaded with TheAudioDB/Wikidata/initials fallback
-- [x] Dark/light mode toggle + auto theme by sunrise/sunset
+- [x] Dark/light mode toggle + auto theme by user-configured start times (Settings)
 - [x] Login screen with server URL + credentials
 - [x] Player state (queue, volume, shuffle, repeat) persisted per account in localStorage
 - [x] Settings screen: theme preference, shuffle mode, volume normalization, streaming quality, build info (branch + commit)
@@ -238,7 +239,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] App name: Tonearm
 - [x] Desktop app: Tauri v2 wrapper, builds as a Linux AppImage
 - [x] Docker image (multi-stage build, bundled nginx + MusicBrainz proxy)
-- [x] Regression tests for auto theme sunrise/sunset logic (`npm test`)
+- [x] Unit tests for auto theme scheduling logic (`npm test`)
 - [x] Unit tests for queue-index arithmetic and hash-route parsing (`npm test`)
 - [x] CI (build + test on push/PR) and tagged-release automation (web bundle + AppImage → GitHub release)
 
