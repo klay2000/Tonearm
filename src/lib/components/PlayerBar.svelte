@@ -1,8 +1,8 @@
 <script>
   import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat, normalizeVolume } from '../stores/player.js'
-  import { coverUrl, streamUrl } from '../api/subsonic.js'
+  import { coverUrl, streamUrl, scrobble } from '../api/subsonic.js'
   import { computeReplayGain } from '../stores/replayGain.js'
-  import { fmt, resolveDuration } from '../stores/playerLogic.js'
+  import { fmt, resolveDuration, shouldSubmitScrobble } from '../stores/playerLogic.js'
   import { toggleAlbumArtMode } from '../stores/albumArtMode.js'
   import { isTauri } from '../api/albumArtWindow.js'
   import { navigate } from '../stores/router.js'
@@ -19,6 +19,10 @@
   // toward the real value as more of the stream downloads, which would
   // otherwise overwrite the already-correct figure.
   let durationKnown = $state(false)
+
+  // Tracks whether the final ("submission") scrobble has already been sent
+  // for the current track, so onTimeUpdate only fires it once.
+  let scrobbled = $state(false)
 
   // ReplayGain volume normalization — applied by scaling the <audio>
   // element's own volume rather than via Web Audio. Cross-origin streams
@@ -44,6 +48,8 @@
         // rough estimate that creeps toward the real value over time).
         durationKnown = !!track.duration
         duration.set(track.duration || 0)
+        scrobbled = false
+        scrobble(track.id, { submission: false }).catch(() => {})
         if ($playing) audio.play().catch(() => {})
       }
     } else {
@@ -70,6 +76,11 @@
   function onTimeUpdate() {
     currentTime.set(audio.currentTime)
     if (!durationKnown) duration.set(resolveDuration(audio.duration, get(duration)))
+
+    if (!scrobbled && $currentTrack && shouldSubmitScrobble(audio.currentTime, get(duration))) {
+      scrobbled = true
+      scrobble($currentTrack.id, { submission: true }).catch(() => {})
+    }
   }
 
   function onEnded() {

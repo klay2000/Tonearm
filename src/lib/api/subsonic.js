@@ -116,6 +116,20 @@ export async function getRandomSongs(size = 500) {
   return data.randomSongs?.song ?? []
 }
 
+// Reports playback progress to the server so it can forward scrobbles to
+// Last.fm/ListenBrainz (configured server-side in Gonic). Best-effort —
+// failures must never interrupt playback.
+export async function scrobble(id, { submission, time } = {}) {
+  try {
+    const params = { id }
+    if (submission !== undefined) params.submission = submission
+    if (time !== undefined) params.time = time
+    await request('scrobble', params)
+  } catch {
+    // ignore — scrobbling is best-effort
+  }
+}
+
 export function streamUrl(id) {
   const bitrate = get(transcodeBitrate)
   const params = bitrate > 0 ? { id, maxBitRate: bitrate, format: 'mp3' } : { id }
