@@ -1,6 +1,7 @@
 <script>
   import { navigate } from '../stores/router.js'
   import { isDark, themePref, applyTheme } from '../stores/theme.js'
+  import Logo from './Logo.svelte'
 
   let query = $state('')
 
@@ -17,7 +18,9 @@
 </script>
 
 <header>
-  <a class="logo" href="#/">Tonearm</a>
+  <a class="logo" href="#/" aria-label="Tonearm">
+    <Logo />
+  </a>
   <form class="search-form" onsubmit={onSearch}>
     <input
       type="search"
@@ -41,10 +44,10 @@
     height: var(--header-h);
   }
   .logo {
-    font-weight: 600;
-    font-size: 15px;
-    letter-spacing: -0.3px;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    height: 20px;
+    color: var(--text);
   }
   .search-form {
     flex: 1;

@@ -39,6 +39,9 @@ subsonic-client/
 ├── index.html
 ├── Dockerfile              # multi-stage build: Vite build → nginx:alpine
 ├── nginx.conf              # serves dist/ + proxies MusicBrainz
+├── public/
+│   ├── logo.svg            # "Tonearm" wordmark (Neuton), dark-on-light for docs
+│   └── logo-dark.svg       # wordmark, light-on-dark for docs (dark theme)
 ├── src-tauri/              # Tauri v2 desktop wrapper (builds Tonearm AppImage)
 │   ├── Cargo.toml
 │   ├── tauri.conf.json
@@ -64,6 +67,7 @@ subsonic-client/
     │   │   ├── streaming.js   # transcode bitrate preference (localStorage)
     │   │   └── viewMode.js    # per-view list/shelf preference (localStorage)
     │   └── components/
+    │       ├── Logo.svelte         # "Tonearm" wordmark (Neuton), used in Header and Login
     │       ├── Header.svelte
     │       ├── Sidebar.svelte
     │       ├── PlayerBar.svelte
