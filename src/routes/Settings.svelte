@@ -1,5 +1,6 @@
 <script>
   import { themePref } from '../lib/stores/theme.js'
+  import { darkStart, lightStart } from '../lib/stores/themeTimes.js'
   import { auth, logout } from '../lib/stores/auth.js'
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
@@ -7,7 +8,7 @@
   import { mergeCaseDuplicates, splitCollabAlbums } from '../lib/stores/artistMerge.js'
 
   const themeOptions = [
-    { value: 'auto',  label: 'Auto',  desc: 'Follow sunrise/sunset at your location' },
+    { value: 'auto',  label: 'Auto',  desc: 'Switch at set times' },
     { value: 'light', label: 'Light', desc: 'Always light' },
     { value: 'dark',  label: 'Dark',  desc: 'Always dark' },
   ]
@@ -66,6 +67,26 @@
         {/each}
       </div>
     </div>
+    {#if $themePref === 'auto'}
+      <div class="field">
+        <span class="label">Dark from</span>
+        <input
+          class="time-input"
+          type="time"
+          value={$darkStart}
+          onchange={(e) => darkStart.set(e.target.value)}
+        />
+      </div>
+      <div class="field">
+        <span class="label">Light from</span>
+        <input
+          class="time-input"
+          type="time"
+          value={$lightStart}
+          onchange={(e) => lightStart.set(e.target.value)}
+        />
+      </div>
+    {/if}
   </section>
 
   <section>
@@ -223,6 +244,17 @@
   }
   .value { font-size: 13px; }
   .mono { font-family: monospace; font-size: 12px; color: var(--text-muted); }
+
+  .time-input {
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+  }
+  .time-input:focus { border-color: var(--accent); outline: none; }
 
   .options { display: flex; gap: 8px; flex-wrap: wrap; }
   .option {

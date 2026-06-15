@@ -13,7 +13,7 @@
 
 <style>
   .logo {
-    height: 1em;
+    height: 100%;
     width: auto;
     display: block;
   }

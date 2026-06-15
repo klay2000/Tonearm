@@ -5,6 +5,7 @@
   import { fmt, resolveDuration } from '../stores/playerLogic.js'
   import { toggleAlbumArtMode } from '../stores/albumArtMode.js'
   import { isTauri } from '../api/albumArtWindow.js'
+  import { navigate } from '../stores/router.js'
   import { get } from 'svelte/store'
 
   let audio = $state(null)
@@ -225,10 +226,28 @@
   <div class="main-row">
   {#if $currentTrack}
     <div class="now-playing">
-      <img src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 48)} alt="" class="cover" />
+      {#if $currentTrack.albumId}
+        <img
+          src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 48)}
+          alt=""
+          class="cover clickable"
+          onclick={() => navigate(`#/album/${$currentTrack.albumId}`)}
+          title="Go to album"
+        />
+      {:else}
+        <img src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 48)} alt="" class="cover" />
+      {/if}
       <div class="info">
-        <span class="title">{$currentTrack.title}</span>
-        <span class="artist">{$currentTrack.artist}</span>
+        {#if $currentTrack.albumId}
+          <span class="title clickable" onclick={() => navigate(`#/album/${$currentTrack.albumId}`)} title="Go to album">{$currentTrack.title}</span>
+        {:else}
+          <span class="title">{$currentTrack.title}</span>
+        {/if}
+        {#if $currentTrack.artistId}
+          <span class="artist clickable" onclick={() => navigate(`#/artist/${$currentTrack.artistId}`)} title="Go to artist">{$currentTrack.artist}</span>
+        {:else}
+          <span class="artist">{$currentTrack.artist}</span>
+        {/if}
       </div>
       <div class="volume-group">
         <button class="mute-btn" onclick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'}>
@@ -421,6 +440,16 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .clickable {
+    cursor: pointer;
+  }
+  .clickable:hover {
+    opacity: 0.75;
+  }
+  .title.clickable:hover,
+  .artist.clickable:hover {
+    text-decoration: underline;
   }
   .controls {
     display: flex;

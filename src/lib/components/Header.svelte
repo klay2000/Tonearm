@@ -46,7 +46,7 @@
   .logo {
     display: flex;
     align-items: center;
-    height: 20px;
+    height: 28px;
     color: var(--text);
   }
   .search-form {
