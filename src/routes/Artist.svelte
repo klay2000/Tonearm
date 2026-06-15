@@ -6,7 +6,7 @@
   import ArtistAvatar from '../lib/components/ArtistAvatar.svelte'
   import { viewModes } from '../lib/stores/viewMode.js'
   import {
-    mergeCaseDuplicates, splitCollabAlbums,
+    mergeCaseDuplicates, splitCollabAlbums, collabSeparators,
     findCombinationEntries, pickCanonicalCasing, combineAlbumLists,
   } from '../lib/stores/artistMerge.js'
 
@@ -23,6 +23,7 @@
     loading = true; error = null; artist = null; displayName = null; albums = []
     const enableCaseMerge = $mergeCaseDuplicates
     const enableCollabSplit = $splitCollabAlbums
+    const separators = $collabSeparators
 
     getArtist(id)
       .then(async primary => {
@@ -46,7 +47,7 @@
           }
 
           if (enableCollabSplit) {
-            const combos = findCombinationEntries(indices, displayName ?? primary.name)
+            const combos = findCombinationEntries(indices, displayName ?? primary.name, separators)
             if (combos.length) {
               const comboArtists = await Promise.all(combos.map(c => getArtist(c.id)))
               for (const combo of comboArtists) albumLists.push(combo.album ?? [])

@@ -3,43 +3,40 @@ import assert from 'node:assert/strict'
 import {
   parseCombinationArtist,
   findCombinationEntries,
+  filterCombinationEntries,
   pickCanonicalCasing,
   mergeCaseDuplicateArtists,
 } from './artistMergeLogic.js'
 
-test('parseCombinationArtist splits "&"-joined names', () => {
-  assert.deepEqual(parseCombinationArtist('Artist One & Artist Two'), ['Artist One', 'Artist Two'])
-})
-
-test('parseCombinationArtist splits "feat."/"ft." variants', () => {
+test('parseCombinationArtist splits "feat."/"ft." variants by default', () => {
   assert.deepEqual(parseCombinationArtist('Daft Punk feat. Pharrell Williams'), ['Daft Punk', 'Pharrell Williams'])
   assert.deepEqual(parseCombinationArtist('Daft Punk feat Pharrell Williams'), ['Daft Punk', 'Pharrell Williams'])
-  assert.deepEqual(parseCombinationArtist('Daft Punk ft. Pharrell Williams'), ['Daft Punk', 'Pharrell Williams'])
 })
 
-test('parseCombinationArtist splits "vs." and "with"', () => {
-  assert.deepEqual(parseCombinationArtist('Artist One vs. Artist Two'), ['Artist One', 'Artist Two'])
-  assert.deepEqual(parseCombinationArtist('Artist One with Artist Two'), ['Artist One', 'Artist Two'])
+test('parseCombinationArtist does not split "ft.", "&", "vs.", "with", or "," unless enabled', () => {
+  assert.equal(parseCombinationArtist('Daft Punk ft. Pharrell Williams'), null)
+  assert.equal(parseCombinationArtist('Artist One & Artist Two'), null)
+  assert.equal(parseCombinationArtist('Artist One vs. Artist Two'), null)
+  assert.equal(parseCombinationArtist('Artist One with Artist Two'), null)
+  assert.equal(parseCombinationArtist('Artist One, Artist Two'), null)
 })
 
-test('parseCombinationArtist splits comma-joined names into multiple parts', () => {
-  assert.deepEqual(parseCombinationArtist('Artist One, Artist Two & Artist Three'), [
-    'Artist One', 'Artist Two', 'Artist Three',
-  ])
+test('parseCombinationArtist respects an explicit separators list', () => {
+  assert.deepEqual(parseCombinationArtist('Daft Punk ft. Pharrell Williams', ['ft']), ['Daft Punk', 'Pharrell Williams'])
+  assert.deepEqual(parseCombinationArtist('Artist One & Artist Two', ['&']), ['Artist One', 'Artist Two'])
+  assert.deepEqual(
+    parseCombinationArtist('Artist One, Artist Two & Artist Three', [',', '&']),
+    ['Artist One', 'Artist Two', 'Artist Three']
+  )
+  assert.equal(parseCombinationArtist('Daft Punk feat. Pharrell Williams', ['&']), null)
 })
 
-test('parseCombinationArtist returns null for plain band names without a separator', () => {
+test('parseCombinationArtist returns null for plain band names without an enabled separator', () => {
   assert.equal(parseCombinationArtist('AC/DC'), null)
   assert.equal(parseCombinationArtist('Earth Wind and Fire'), null)
-})
-
-test('parseCombinationArtist also splits real band names that happen to contain "&" (accepted false positive)', () => {
-  // "Above & Beyond" is a real duo name, but it's indistinguishable from a
-  // combined-artist tag using this heuristic. Splitting it just means
-  // findCombinationEntries would (incorrectly) look for "Above" and
-  // "Beyond" artist pages too — those won't exist, so it's a harmless no-op
-  // in practice. See SEPARATOR_RE comment for the accepted trade-off.
-  assert.deepEqual(parseCombinationArtist('Above & Beyond'), ['Above', 'Beyond'])
+  // "Above & Beyond" is a real duo name; with the default separators
+  // ("feat." only) it's correctly left alone.
+  assert.equal(parseCombinationArtist('Above & Beyond'), null)
 })
 
 test('parseCombinationArtist returns null for empty/missing input', () => {
@@ -54,7 +51,7 @@ test('findCombinationEntries finds entries containing the target artist as a com
       name: 'A',
       artist: [
         { id: '1', name: 'Artist One' },
-        { id: '2', name: 'Artist One & Artist Two' },
+        { id: '2', name: 'Artist One feat. Artist Two' },
       ],
     },
     {
@@ -81,6 +78,45 @@ test('findCombinationEntries excludes the entry that is itself the target', () =
     { name: 'A', artist: [{ id: '1', name: 'Artist One' }] },
   ]
   assert.deepEqual(findCombinationEntries(indices, 'Artist One'), [])
+})
+
+test('findCombinationEntries respects a custom separators list', () => {
+  const indices = [
+    { name: 'A', artist: [{ id: '1', name: 'Artist One & Artist Two' }] },
+  ]
+  assert.deepEqual(findCombinationEntries(indices, 'Artist One'), []) // "&" not enabled by default
+  const matches = findCombinationEntries(indices, 'Artist One', ['&'])
+  assert.equal(matches.length, 1)
+  assert.equal(matches[0].id, '1')
+})
+
+test('filterCombinationEntries removes combination entries and drops empty groups', () => {
+  const indices = [
+    {
+      name: 'A',
+      artist: [
+        { id: '1', name: 'Artist One' },
+        { id: '2', name: 'Artist One feat. Artist Two' },
+      ],
+    },
+    {
+      name: 'D',
+      artist: [
+        { id: '3', name: 'Daft Punk feat. Pharrell Williams' },
+      ],
+    },
+  ]
+
+  const result = filterCombinationEntries(indices)
+  assert.deepEqual(result.map(g => g.name), ['A'])
+  assert.deepEqual(result[0].artist.map(a => a.id), ['1'])
+})
+
+test('filterCombinationEntries leaves entries alone when no separators match', () => {
+  const indices = [
+    { name: 'A', artist: [{ id: '1', name: 'AC/DC' }, { id: '2', name: 'Above & Beyond' }] },
+  ]
+  assert.deepEqual(filterCombinationEntries(indices), indices)
 })
 
 test('pickCanonicalCasing prefers the most common casing', () => {

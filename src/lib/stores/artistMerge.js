@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store'
+import { DEFAULT_COLLAB_SEPARATORS } from './artistMergeLogic.js'
 
 // Settings toggles, following the pattern in streaming.js / greeting.js.
 // Both default to "on" — merging only ever combines entries that already
@@ -14,9 +15,20 @@ export const splitCollabAlbums = writable(
 )
 splitCollabAlbums.subscribe(v => localStorage.setItem('subsonic_split_collab_albums', String(v)))
 
+// Which separator tokens (see SEPARATOR_DEFS) count as joining a
+// combination-artist entry. "feat." only by default — see SEPARATOR_DEFS
+// for why "&" and "," aren't enabled out of the box.
+export const collabSeparators = writable(
+  JSON.parse(localStorage.getItem('subsonic_collab_separators') ?? JSON.stringify(DEFAULT_COLLAB_SEPARATORS))
+)
+collabSeparators.subscribe(v => localStorage.setItem('subsonic_collab_separators', JSON.stringify(v)))
+
 export {
+  SEPARATOR_DEFS,
+  DEFAULT_COLLAB_SEPARATORS,
   parseCombinationArtist,
   findCombinationEntries,
+  filterCombinationEntries,
   pickCanonicalCasing,
   mergeCaseDuplicateArtists,
   combineAlbumLists,

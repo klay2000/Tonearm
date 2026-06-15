@@ -5,7 +5,13 @@
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
   import { transcodeBitrate } from '../lib/stores/streaming.js'
-  import { mergeCaseDuplicates, splitCollabAlbums } from '../lib/stores/artistMerge.js'
+  import { mergeCaseDuplicates, splitCollabAlbums, collabSeparators, SEPARATOR_DEFS } from '../lib/stores/artistMerge.js'
+
+  function toggleCollabSeparator(key) {
+    collabSeparators.update(keys =>
+      keys.includes(key) ? keys.filter(k => k !== key) : [...keys, key]
+    )
+  }
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Switch at set times' },
@@ -42,8 +48,8 @@
   ]
 
   const splitCollabAlbumsOptions = [
-    { value: true,  label: 'On',  desc: 'Show "Artist A & Artist B" albums on both artists\' pages' },
-    { value: false, label: 'Off', desc: 'Only show collaboration albums under their combined artist entry' },
+    { value: true,  label: 'On',  desc: 'Hide "Artist A feat. Artist B" entries and show those albums on each artist\'s own page' },
+    { value: false, label: 'Off', desc: 'Show collaboration entries as their own separate artists' },
   ]
 </script>
 
@@ -140,6 +146,22 @@
         {/each}
       </div>
     </div>
+    {#if $splitCollabAlbums}
+      <div class="field">
+        <span class="label">Separators</span>
+        <div class="options">
+          {#each SEPARATOR_DEFS as def}
+            <button
+              class="option chip"
+              class:selected={$collabSeparators.includes(def.key)}
+              onclick={() => toggleCollabSeparator(def.key)}
+            >
+              <span class="opt-label">{def.label}</span>
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
   </section>
 
   <section>
@@ -267,6 +289,10 @@
     cursor: pointer;
     min-width: 110px;
     transition: border-color 0.1s;
+  }
+  .option.chip {
+    min-width: auto;
+    padding: 6px 12px;
   }
   .option:hover { border-color: var(--accent); }
   .option.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }

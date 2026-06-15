@@ -2,30 +2,45 @@
 // free of browser globals so they can run under plain Node in tests. The
 // related localStorage-backed settings stores live in artistMerge.js.
 
-// Separators that join multiple artist names into one combined "artist"
-// entry, e.g. "Artist One & Artist Two" or "Artist One feat. Artist Two".
-// Kept conservative: only matches separators that are very unlikely to
-// appear inside a single band/artist name. Things like "Earth, Wind & Fire",
-// "Crosby, Stills & Nash" or "Above & Beyond" would also be split here —
-// that's an accepted trade-off for this issue's scope (see notes in
-// artistMergeLogic.test.js).
-const SEPARATOR_RE = /\s*(?:&|,|\bfeat\.|\bfeat\b|\bft\.|\bft\b|\bvs\.|\bvs\b|\bwith\b)\s*/i
+// Separator tokens that can join multiple artist names into one combined
+// "artist" entry, e.g. "Daft Punk feat. Pharrell Williams". Each is opt-in
+// (see artistMerge.js for the configurable selection) since some — "&" and
+// "," especially — are very likely to appear inside a single band/artist
+// name ("Earth, Wind & Fire", "Above & Beyond"). "feat." is the only one
+// enabled by default, as it's rarely part of an artist's actual name.
+export const SEPARATOR_DEFS = [
+  { key: 'feat', label: 'feat.', re: '\\bfeat\\.?(?=\\s|$)' },
+  { key: 'ft',   label: 'ft.',   re: '\\bft\\.?(?=\\s|$)' },
+  { key: 'vs',   label: 'vs.',   re: '\\bvs\\.?(?=\\s|$)' },
+  { key: 'with', label: 'with',  re: '\\bwith\\b' },
+  { key: '&',    label: '&',     re: '&' },
+  { key: ',',    label: ',',     re: ',' },
+]
+
+export const DEFAULT_COLLAB_SEPARATORS = ['feat']
+
+function separatorRegex(separators) {
+  const defs = SEPARATOR_DEFS.filter(d => separators?.includes(d.key))
+  if (!defs.length) return null
+  return new RegExp(`\\s*(?:${defs.map(d => d.re).join('|')})\\s*`, 'i')
+}
 
 /**
  * If `name` looks like a combination of multiple artist names (joined by
- * "&", "feat.", "ft.", "vs.", "with", or commas), return the individual
- * component names in order. Otherwise return null.
+ * one of the enabled `separators`, see SEPARATOR_DEFS), return the
+ * individual component names in order. Otherwise return null.
  *
- * Conservative by design: requires at least one of the known separator
+ * Conservative by design: requires at least one of the enabled separator
  * tokens to actually be present, so plain band names with no separator
  * (e.g. "AC/DC") are left alone.
  */
-export function parseCombinationArtist(name) {
+export function parseCombinationArtist(name, separators = DEFAULT_COLLAB_SEPARATORS) {
   if (!name) return null
-  if (!SEPARATOR_RE.test(name)) return null
+  const re = separatorRegex(separators)
+  if (!re || !re.test(name)) return null
 
   const parts = name
-    .split(SEPARATOR_RE)
+    .split(re)
     .map(p => p.trim())
     .filter(Boolean)
 
@@ -41,14 +56,14 @@ export function parseCombinationArtist(name) {
  *
  * Returns an array of { id, name, components }.
  */
-export function findCombinationEntries(indices, artistName) {
+export function findCombinationEntries(indices, artistName, separators = DEFAULT_COLLAB_SEPARATORS) {
   const target = artistName.trim().toLowerCase()
   const matches = []
 
   for (const idx of indices ?? []) {
     for (const artist of idx.artist ?? []) {
       if (artist.name.trim().toLowerCase() === target) continue
-      const components = parseCombinationArtist(artist.name)
+      const components = parseCombinationArtist(artist.name, separators)
       if (!components) continue
       if (components.some(c => c.toLowerCase() === target)) {
         matches.push({ id: artist.id, name: artist.name, components })
@@ -57,6 +72,22 @@ export function findCombinationEntries(indices, artistName) {
   }
 
   return matches
+}
+
+/**
+ * Remove combination-artist entries (per parseCombinationArtist) from the
+ * index entirely, dropping any letter group that becomes empty. Used so
+ * "Artist One feat. Artist Two" doesn't show up as its own entry in the A-Z
+ * list — its albums are instead folded into Artist One's and Artist Two's
+ * pages via findCombinationEntries.
+ */
+export function filterCombinationEntries(indices, separators = DEFAULT_COLLAB_SEPARATORS) {
+  return (indices ?? [])
+    .map(idx => ({
+      ...idx,
+      artist: (idx.artist ?? []).filter(a => !parseCombinationArtist(a.name, separators)),
+    }))
+    .filter(idx => idx.artist.length > 0)
 }
 
 /**

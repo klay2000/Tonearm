@@ -3,7 +3,10 @@
   import ArtistAvatar from '../lib/components/ArtistAvatar.svelte'
   import ViewToggle from '../lib/components/ViewToggle.svelte'
   import { viewModes } from '../lib/stores/viewMode.js'
-  import { mergeCaseDuplicates, mergeCaseDuplicateArtists } from '../lib/stores/artistMerge.js'
+  import {
+    mergeCaseDuplicates, splitCollabAlbums, collabSeparators,
+    mergeCaseDuplicateArtists, filterCombinationEntries,
+  } from '../lib/stores/artistMerge.js'
 
   let indices = $state([])
   let loading = $state(true)
@@ -15,9 +18,12 @@
       .catch(e => { error = e.message; loading = false })
   })
 
-  let displayIndices = $derived(
-    $mergeCaseDuplicates ? mergeCaseDuplicateArtists(indices) : indices
-  )
+  let displayIndices = $derived.by(() => {
+    let result = indices
+    if ($splitCollabAlbums) result = filterCombinationEntries(result, $collabSeparators)
+    if ($mergeCaseDuplicates) result = mergeCaseDuplicateArtists(result)
+    return result
+  })
 
   // Plain #id anchors would be picked up by the hash router and navigate
   // away, so scroll to the section manually instead.
