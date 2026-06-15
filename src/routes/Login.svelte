@@ -3,6 +3,7 @@
   import { testConnection } from '../lib/api/subsonic.js'
   import { login, authError, lastSession } from '../lib/stores/auth.js'
   import LoadingScreen from '../lib/components/LoadingScreen.svelte'
+  import Logo from '../lib/components/Logo.svelte'
 
   const saved = get(lastSession)
 
@@ -32,7 +33,7 @@
     <LoadingScreen message="Connecting to server…" />
   {:else}
     <div class="card">
-      <h1>Tonearm</h1>
+      <h1 aria-label="Tonearm"><Logo /></h1>
       <form onsubmit={onSubmit}>
         <label>
           Server URL
@@ -76,9 +77,12 @@
     gap: 24px;
   }
   h1 {
-    font-size: 22px;
-    font-weight: 700;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    color: var(--text);
+  }
+  h1 :global(.logo) {
+    height: 36px;
   }
   form {
     display: flex;

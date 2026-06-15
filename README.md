@@ -1,4 +1,7 @@
-# Tonearm
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/logo-dark.svg">
+  <img alt="Tonearm" src="public/logo.svg" height="48">
+</picture>
 
 A minimal, modern, self-hosted music client for [Gonic](https://github.com/sentriz/gonic) / Subsonic servers.
 
