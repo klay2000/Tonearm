@@ -4,6 +4,7 @@
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
   import { transcodeBitrate } from '../lib/stores/streaming.js'
+  import { mergeCaseDuplicates, splitCollabAlbums } from '../lib/stores/artistMerge.js'
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Follow sunrise/sunset at your location' },
@@ -32,6 +33,16 @@
     { value: 320, label: '320 kbps', desc: 'Transcode to 320kbps MP3' },
     { value: 192, label: '192 kbps', desc: 'Transcode to 192kbps MP3' },
     { value: 128, label: '128 kbps', desc: 'Transcode to 128kbps MP3, saves the most bandwidth' },
+  ]
+
+  const mergeCaseDuplicatesOptions = [
+    { value: true,  label: 'On',  desc: 'Combine "AC/DC" and "Ac/Dc" into one artist entry' },
+    { value: false, label: 'Off', desc: 'Show every casing variant as its own artist' },
+  ]
+
+  const splitCollabAlbumsOptions = [
+    { value: true,  label: 'On',  desc: 'Show "Artist A & Artist B" albums on both artists\' pages' },
+    { value: false, label: 'Off', desc: 'Only show collaboration albums under their combined artist entry' },
   ]
 </script>
 
@@ -67,6 +78,40 @@
             class="option"
             class:selected={$greetingMode === opt.value}
             onclick={() => greetingMode.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Library</h2>
+    <div class="field">
+      <span class="label">Merge duplicate artists</span>
+      <div class="options">
+        {#each mergeCaseDuplicatesOptions as opt}
+          <button
+            class="option"
+            class:selected={$mergeCaseDuplicates === opt.value}
+            onclick={() => mergeCaseDuplicates.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Collab albums</span>
+      <div class="options">
+        {#each splitCollabAlbumsOptions as opt}
+          <button
+            class="option"
+            class:selected={$splitCollabAlbums === opt.value}
+            onclick={() => splitCollabAlbums.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>
