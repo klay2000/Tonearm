@@ -16,3 +16,12 @@ export function fmt(secs) {
 export function resolveDuration(audioDuration, previous) {
   return Number.isFinite(audioDuration) && audioDuration > 0 ? audioDuration : previous
 }
+
+// Last.fm/ListenBrainz scrobble convention: a track counts as "played" once
+// it has been listened to for at least 4 minutes, or at least half its
+// duration, whichever comes first. Returns false if duration is unknown.
+export function shouldSubmitScrobble(elapsedSeconds, durationSeconds) {
+  if (!isFinite(elapsedSeconds) || !isFinite(durationSeconds) || durationSeconds <= 0) return false
+  const FOUR_MINUTES = 4 * 60
+  return elapsedSeconds >= FOUR_MINUTES || elapsedSeconds >= durationSeconds / 2
+}
