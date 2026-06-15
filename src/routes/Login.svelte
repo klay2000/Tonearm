@@ -7,7 +7,7 @@
 
   const saved = get(lastSession)
 
-  let serverUrl = $state(saved?.serverUrl ?? 'http://10.0.0.10:4747')
+  let serverUrl = $state(saved?.serverUrl ?? '')
   let username = $state(saved?.username ?? '')
   let password = $state('')
   let error = $state(null)
@@ -37,7 +37,7 @@
       <form onsubmit={onSubmit}>
         <label>
           Server URL
-          <input type="url" bind:value={serverUrl} placeholder="http://…" required />
+          <input type="url" bind:value={serverUrl} placeholder="http://10.0.0.10:4747" required />
         </label>
         <label>
           Username
