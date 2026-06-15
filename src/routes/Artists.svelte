@@ -1,17 +1,28 @@
 <script>
-  import { getArtists } from '../lib/api/subsonic.js'
+  import { getArtistsCached } from '../lib/api/subsonic.js'
   import ArtistAvatar from '../lib/components/ArtistAvatar.svelte'
   import ViewToggle from '../lib/components/ViewToggle.svelte'
   import { viewModes } from '../lib/stores/viewMode.js'
+  import {
+    mergeCaseDuplicates, splitCollabAlbums, collabSeparators,
+    mergeCaseDuplicateArtists, filterCombinationEntries,
+  } from '../lib/stores/artistMerge.js'
 
   let indices = $state([])
   let loading = $state(true)
   let error = $state(null)
 
   $effect(() => {
-    getArtists()
+    getArtistsCached()
       .then(data => { indices = data; loading = false })
       .catch(e => { error = e.message; loading = false })
+  })
+
+  let displayIndices = $derived.by(() => {
+    let result = indices
+    if ($splitCollabAlbums) result = filterCombinationEntries(result, $collabSeparators)
+    if ($mergeCaseDuplicates) result = mergeCaseDuplicateArtists(result)
+    return result
   })
 
   // Plain #id anchors would be picked up by the hash router and navigate
@@ -31,20 +42,20 @@
   <p class="muted">Loading artists…</p>
 {:else if error}
   <p class="error">Error: {error}</p>
-{:else if indices.length}
+{:else if displayIndices.length}
   <div class="jump-bar">
-    {#each indices as idx}
+    {#each displayIndices as idx}
       <a href="#{idx.name}" onclick={(e) => jumpTo(e, idx.name)}>{idx.name}</a>
     {/each}
   </div>
 
-  {#each indices as idx}
+  {#each displayIndices as idx}
     <section id={idx.name}>
       <h2 class="index-label">{idx.name}</h2>
       {#if $viewModes.artists === 'shelf'}
         <div class="artist-shelf">
           {#each idx.artist as artist}
-            <a class="artist-card" href="#/artist/{artist.id}">
+            <a class="artist-card" href="#/artist/{artist.mergedIds?.[0] ?? artist.id}">
               <ArtistAvatar id={artist.id} name={artist.name} size={96} />
               <span class="name">{artist.name}</span>
               <span class="count">{artist.albumCount} albums</span>
@@ -54,7 +65,7 @@
       {:else}
         <div class="artist-list">
           {#each idx.artist as artist}
-            <a class="artist-row" href="#/artist/{artist.id}">
+            <a class="artist-row" href="#/artist/{artist.mergedIds?.[0] ?? artist.id}">
               <ArtistAvatar id={artist.id} name={artist.name} size={36} />
               <span class="name">{artist.name}</span>
               <span class="count">{artist.albumCount} albums</span>

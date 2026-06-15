@@ -57,6 +57,22 @@ export async function getArtists() {
   return data.artists?.index ?? []
 }
 
+// The full artist index rarely changes within a session and is needed by
+// both the A-Z artist list and (for collab-album/casing merging) the single
+// artist page. Cache it in memory so visiting an artist page doesn't trigger
+// a second full-index fetch.
+let artistsCache = null
+
+export async function getArtistsCached() {
+  if (!artistsCache) artistsCache = getArtists()
+  try {
+    return await artistsCache
+  } catch (err) {
+    artistsCache = null // allow retry on next call
+    throw err
+  }
+}
+
 export async function getArtist(id) {
   const data = await request('getArtist', { id })
   return data.artist

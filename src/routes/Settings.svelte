@@ -5,6 +5,13 @@
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
   import { transcodeBitrate } from '../lib/stores/streaming.js'
+  import { mergeCaseDuplicates, splitCollabAlbums, collabSeparators, SEPARATOR_DEFS } from '../lib/stores/artistMerge.js'
+
+  function toggleCollabSeparator(key) {
+    collabSeparators.update(keys =>
+      keys.includes(key) ? keys.filter(k => k !== key) : [...keys, key]
+    )
+  }
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Switch at set times' },
@@ -33,6 +40,16 @@
     { value: 320, label: '320 kbps', desc: 'Transcode to 320kbps MP3' },
     { value: 192, label: '192 kbps', desc: 'Transcode to 192kbps MP3' },
     { value: 128, label: '128 kbps', desc: 'Transcode to 128kbps MP3, saves the most bandwidth' },
+  ]
+
+  const mergeCaseDuplicatesOptions = [
+    { value: true,  label: 'On',  desc: 'Combine "AC/DC" and "Ac/Dc" into one artist entry' },
+    { value: false, label: 'Off', desc: 'Show every casing variant as its own artist' },
+  ]
+
+  const splitCollabAlbumsOptions = [
+    { value: true,  label: 'On',  desc: 'Hide "Artist A feat. Artist B" entries and show those albums on each artist\'s own page' },
+    { value: false, label: 'Off', desc: 'Show collaboration entries as their own separate artists' },
   ]
 </script>
 
@@ -95,6 +112,56 @@
         {/each}
       </div>
     </div>
+  </section>
+
+  <section>
+    <h2>Library</h2>
+    <div class="field">
+      <span class="label">Merge duplicate artists</span>
+      <div class="options">
+        {#each mergeCaseDuplicatesOptions as opt}
+          <button
+            class="option"
+            class:selected={$mergeCaseDuplicates === opt.value}
+            onclick={() => mergeCaseDuplicates.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Collab albums</span>
+      <div class="options">
+        {#each splitCollabAlbumsOptions as opt}
+          <button
+            class="option"
+            class:selected={$splitCollabAlbums === opt.value}
+            onclick={() => splitCollabAlbums.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+    {#if $splitCollabAlbums}
+      <div class="field">
+        <span class="label">Separators</span>
+        <div class="options">
+          {#each SEPARATOR_DEFS as def}
+            <button
+              class="option chip"
+              class:selected={$collabSeparators.includes(def.key)}
+              onclick={() => toggleCollabSeparator(def.key)}
+            >
+              <span class="opt-label">{def.label}</span>
+            </button>
+          {/each}
+        </div>
+      </div>
+    {/if}
   </section>
 
   <section>
@@ -222,6 +289,10 @@
     cursor: pointer;
     min-width: 110px;
     transition: border-color 0.1s;
+  }
+  .option.chip {
+    min-width: auto;
+    padding: 6px 12px;
   }
   .option:hover { border-color: var(--accent); }
   .option.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }

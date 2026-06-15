@@ -1,22 +1,63 @@
 <script>
-  import { getArtist, getAlbum } from '../lib/api/subsonic.js'
+  import { getArtist, getAlbum, getArtistsCached } from '../lib/api/subsonic.js'
   import AlbumGrid from '../lib/components/AlbumGrid.svelte'
   import ViewToggle from '../lib/components/ViewToggle.svelte'
   import { playQueue } from '../lib/stores/player.js'
   import ArtistAvatar from '../lib/components/ArtistAvatar.svelte'
   import { viewModes } from '../lib/stores/viewMode.js'
+  import {
+    mergeCaseDuplicates, splitCollabAlbums, collabSeparators,
+    findCombinationEntries, pickCanonicalCasing, combineAlbumLists,
+  } from '../lib/stores/artistMerge.js'
 
   let { id } = $props()
 
   let artist = $state(null)
+  let displayName = $state(null)
+  let albums = $state([])
   let loading = $state(true)
   let error = $state(null)
   let loadingPlay = $state(false)
 
   $effect(() => {
-    loading = true; error = null; artist = null
+    loading = true; error = null; artist = null; displayName = null; albums = []
+    const enableCaseMerge = $mergeCaseDuplicates
+    const enableCollabSplit = $splitCollabAlbums
+    const separators = $collabSeparators
+
     getArtist(id)
-      .then(data => { artist = data; loading = false })
+      .then(async primary => {
+        artist = primary
+        displayName = primary.name
+        let albumLists = [primary.album ?? []]
+
+        if (enableCaseMerge || enableCollabSplit) {
+          const indices = await getArtistsCached()
+
+          if (enableCaseMerge) {
+            const dupes = (indices ?? [])
+              .flatMap(idx => idx.artist ?? [])
+              .filter(a => a.id !== primary.id && a.name.trim().toLowerCase() === primary.name.trim().toLowerCase())
+
+            if (dupes.length) {
+              displayName = pickCanonicalCasing([primary.name, ...dupes.map(d => d.name)])
+              const dupeArtists = await Promise.all(dupes.map(d => getArtist(d.id)))
+              for (const dup of dupeArtists) albumLists.push(dup.album ?? [])
+            }
+          }
+
+          if (enableCollabSplit) {
+            const combos = findCombinationEntries(indices, displayName ?? primary.name, separators)
+            if (combos.length) {
+              const comboArtists = await Promise.all(combos.map(c => getArtist(c.id)))
+              for (const combo of comboArtists) albumLists.push(combo.album ?? [])
+            }
+          }
+        }
+
+        albums = combineAlbumLists(...albumLists)
+        loading = false
+      })
       .catch(e => { error = e.message; loading = false })
   })
 
@@ -24,10 +65,10 @@
     if (!artist) return
     loadingPlay = true
     try {
-      const albums = await Promise.all(
-        (artist.album ?? []).map(a => getAlbum(a.id).then(al => al.song ?? []))
+      const albumResults = await Promise.all(
+        albums.map(a => getAlbum(a.id).then(al => al.song ?? []))
       )
-      const tracks = albums.flat()
+      const tracks = albumResults.flat()
       if (shuffled) {
         for (let i = tracks.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1))
@@ -47,9 +88,9 @@
   <p class="error">Error: {error}</p>
 {:else if artist}
   <div class="artist-header">
-    <ArtistAvatar id={artist.id} name={artist.name} size={80} />
+    <ArtistAvatar id={artist.id} name={displayName ?? artist.name} size={80} />
     <div class="artist-meta">
-      <h1 class="artist-name">{artist.name}</h1>
+      <h1 class="artist-name">{displayName ?? artist.name}</h1>
       <div class="artist-actions">
         <button class="play-all" onclick={() => playArtist(false)} disabled={loadingPlay}>
           ▶ Play artist
@@ -60,12 +101,12 @@
       </div>
     </div>
   </div>
-  {#if artist.album?.length}
+  {#if albums.length}
     <div class="section-header">
       <h2>Albums</h2>
       <ViewToggle view="artist" />
     </div>
-    <AlbumGrid albums={artist.album} mode={$viewModes.artist} subtitle="year" />
+    <AlbumGrid {albums} mode={$viewModes.artist} subtitle="year" />
   {:else}
     <p class="muted">There's nothing here.</p>
   {/if}
