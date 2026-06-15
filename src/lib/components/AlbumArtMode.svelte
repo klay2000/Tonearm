@@ -2,6 +2,7 @@
   import { currentTrack, playing, playNext, playPrev, togglePlay } from '../stores/player.js'
   import { toggleAlbumArtMode } from '../stores/albumArtMode.js'
   import { coverUrl } from '../api/subsonic.js'
+  import { isTauri, startResizeDrag } from '../api/albumArtWindow.js'
 
   // Touch devices have no hover, so tapping the art toggles the controls too.
   let showControls = $state(false)
@@ -27,36 +28,46 @@
 
   <div class="overlay" class:visible={showControls}>
     <button class="close-btn" onclick={(e) => { e.stopPropagation(); toggleAlbumArtMode() }} aria-label="Exit album art mode" title="Exit">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
         <line x1="3" y1="3" x2="13" y2="13"/>
         <line x1="13" y1="3" x2="3" y2="13"/>
       </svg>
     </button>
     <div class="controls" onclick={(e) => e.stopPropagation()} role="presentation">
       <button onclick={playPrev} aria-label="Previous">
-        <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
+        <svg viewBox="0 0 16 16" fill="currentColor">
           <polygon points="8,2 2,8 8,14" /><rect x="9" y="2" width="3" height="12" rx="1"/>
         </svg>
       </button>
       <button class="play-btn" onclick={togglePlay} aria-label={$playing ? 'Pause' : 'Play'}>
         {#if $playing}
-          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+          <svg viewBox="0 0 16 16" fill="currentColor">
             <rect x="3" y="2" width="4" height="12" rx="1"/>
             <rect x="9" y="2" width="4" height="12" rx="1"/>
           </svg>
         {:else}
-          <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor">
+          <svg viewBox="0 0 16 16" fill="currentColor" class="play-icon">
             <polygon points="5,2 14,8 5,14"/>
           </svg>
         {/if}
       </button>
       <button onclick={playNext} aria-label="Next">
-        <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
+        <svg viewBox="0 0 16 16" fill="currentColor">
           <polygon points="8,2 14,8 8,14" /><rect x="4" y="2" width="3" height="12" rx="1"/>
         </svg>
       </button>
     </div>
   </div>
+
+  {#if isTauri}
+    <!-- Corner resize handles for the undecorated mini window. Tauri v2
+         requires explicit elements + startResizeDragging() for undecorated
+         windows to support resizing. Diagonal-only keeps the window square. -->
+    <div class="resize-handle nw" onpointerdown={(e) => startResizeDrag(e, 'NorthWest')} data-tauri-resize-handle role="presentation"></div>
+    <div class="resize-handle ne" onpointerdown={(e) => startResizeDrag(e, 'NorthEast')} data-tauri-resize-handle role="presentation"></div>
+    <div class="resize-handle sw" onpointerdown={(e) => startResizeDrag(e, 'SouthWest')} data-tauri-resize-handle role="presentation"></div>
+    <div class="resize-handle se" onpointerdown={(e) => startResizeDrag(e, 'SouthEast')} data-tauri-resize-handle role="presentation"></div>
+  {/if}
 </div>
 
 <style>
@@ -89,7 +100,7 @@
     flex-direction: column;
     justify-content: flex-end;
     align-items: center;
-    padding: 24px;
+    padding: clamp(12px, 4vmin, 24px);
     opacity: 0;
     transition: opacity 0.15s;
     background: linear-gradient(to top, rgba(0,0,0,0.55), transparent 45%);
@@ -104,19 +115,23 @@
 
   .close-btn {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: clamp(8px, 3vmin, 16px);
+    right: clamp(8px, 3vmin, 16px);
     color: white;
     opacity: 0.8;
-    padding: 6px;
+    padding: clamp(4px, 1.5vmin, 6px);
     pointer-events: auto;
   }
   .close-btn:hover { opacity: 1; }
+  .close-btn svg {
+    width: clamp(14px, 5vmin, 16px);
+    height: clamp(14px, 5vmin, 16px);
+  }
 
   .controls {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: clamp(12px, 6vmin, 24px);
     cursor: default;
     pointer-events: auto;
   }
@@ -128,10 +143,39 @@
     justify-content: center;
   }
   .controls button:hover { opacity: 1; }
+  .controls button svg {
+    width: clamp(18px, 8vmin, 22px);
+    height: clamp(18px, 8vmin, 22px);
+  }
+  .controls button svg.play-icon {
+    width: clamp(20px, 9vmin, 24px);
+    height: clamp(20px, 9vmin, 24px);
+  }
   .play-btn {
-    width: 48px;
-    height: 48px;
+    width: clamp(36px, 16vmin, 48px);
+    height: clamp(36px, 16vmin, 48px);
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.15);
   }
+  .play-btn svg {
+    width: clamp(16px, 7vmin, 20px);
+    height: clamp(16px, 7vmin, 20px);
+  }
+  .play-btn svg.play-icon {
+    width: clamp(20px, 9vmin, 24px);
+    height: clamp(20px, 9vmin, 24px);
+  }
+
+  /* Corner resize handles for the undecorated mini window, sized like a
+     normal OS resize border. Diagonal-only resizing keeps the window square. */
+  .resize-handle {
+    position: absolute;
+    z-index: 30;
+    width: 8px;
+    height: 8px;
+  }
+  .resize-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
+  .resize-handle.ne { top: 0; right: 0; cursor: nesw-resize; }
+  .resize-handle.sw { bottom: 0; left: 0; cursor: nesw-resize; }
+  .resize-handle.se { bottom: 0; right: 0; cursor: nwse-resize; }
 </style>
