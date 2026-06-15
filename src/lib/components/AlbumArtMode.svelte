@@ -60,9 +60,9 @@
   </div>
 
   {#if isTauri}
-    <!-- Resize handles for the undecorated mini window. Tauri v2 requires
-         explicit elements + startResizeDragging() for undecorated windows
-         to support diagonal/edge resizing. -->
+    <!-- Corner resize handles for the undecorated mini window. Tauri v2
+         requires explicit elements + startResizeDragging() for undecorated
+         windows to support resizing. Diagonal-only keeps the window square. -->
     <div class="resize-handle nw" onpointerdown={(e) => startResizeDrag(e, 'NorthWest')} data-tauri-resize-handle role="presentation"></div>
     <div class="resize-handle ne" onpointerdown={(e) => startResizeDrag(e, 'NorthEast')} data-tauri-resize-handle role="presentation"></div>
     <div class="resize-handle sw" onpointerdown={(e) => startResizeDrag(e, 'SouthWest')} data-tauri-resize-handle role="presentation"></div>
@@ -166,13 +166,13 @@
     height: clamp(20px, 9vmin, 24px);
   }
 
-  /* Resize handles for the undecorated mini window. Sized generously enough
-     to grab with a mouse but kept invisible. */
+  /* Corner resize handles for the undecorated mini window, sized like a
+     normal OS resize border. Diagonal-only resizing keeps the window square. */
   .resize-handle {
     position: absolute;
     z-index: 30;
-    width: 14px;
-    height: 14px;
+    width: 8px;
+    height: 8px;
   }
   .resize-handle.nw { top: 0; left: 0; cursor: nwse-resize; }
   .resize-handle.ne { top: 0; right: 0; cursor: nesw-resize; }
