@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/klay2000/subsonic-client"
+    "url": "https://github.com/klay2000/Tonearm"
   },
   "scripts": {
     "dev": "vite",
