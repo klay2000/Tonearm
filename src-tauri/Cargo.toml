@@ -2,7 +2,7 @@
 name = "app"
 version = "0.1.0"
 description = "A Tauri App"
-authors = ["Klayton Smith"]
+authors = ["Zoe Smith"]
 license = "MIT"
 repository = "https://github.com/klay2000/Tonearm"
 edition = "2021"
