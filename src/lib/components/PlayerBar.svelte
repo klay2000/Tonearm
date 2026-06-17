@@ -108,8 +108,9 @@
     scrubRatio = getRatio(e)
   }
 
-  function onScrubEnd() {
+  function onScrubEnd(e) {
     if (!scrubbing) return
+    scrubRatio = getRatio(e)
     const target = scrubRatio * $duration
     currentTime.set(target)
     scrubbing = false
