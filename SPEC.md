@@ -2,8 +2,8 @@
 
 **Version**: 0.5
 **Date**: 2026-06-08
-**Server**: Gonic at `http://10.0.0.10:4747`
-**Web host**: `http://192.168.122.79` (dev VM)
+**Server**: Gonic at `http://192.168.1.50:4747` (example)
+**Web host**: `http://192.168.1.60` (dev VM, example)
 
 ---
 
@@ -136,11 +136,11 @@ GitHub Actions workflows live in `.github/workflows/`:
 
 ## Subsonic API
 
-**Base URL**: `http://10.0.0.10:4747/rest/`
+**Base URL**: `http://192.168.1.50:4747/rest/` (example)
 
 **Auth** (appended to every request):
 ```
-u=aesthetic&p=<password>&v=1.16.0&c=aesthetic-client&f=json
+u=<username>&p=<password>&v=1.16.1&c=tonearm&f=json
 ```
 
 **Endpoints used**:

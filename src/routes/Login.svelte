@@ -37,7 +37,7 @@
       <form onsubmit={onSubmit}>
         <label>
           Server URL
-          <input type="url" bind:value={serverUrl} placeholder="http://10.0.0.10:4747" required />
+          <input type="url" bind:value={serverUrl} placeholder="http://192.168.1.50:4747" required />
         </label>
         <label>
           Username
