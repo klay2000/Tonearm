@@ -10,8 +10,20 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  # Build the desktop AppImage for each supported CPU architecture. x86_64 on
+  # a standard runner, aarch64 on GitHub's native ARM runner (so Raspberry Pi
+  # and other arm64 devices get a matching build — see updateCheck.js /
+  # install-kiosk.sh, which pick assets by arch token in the filename).
+  appimage:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,12 +42,6 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
           sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" src-tauri/Cargo.toml
 
-      - name: Build web app
-        run: npm run build
-
-      - name: Package web build
-        run: (cd dist && zip -r "../tonearm-web-${{ github.ref_name }}.zip" .)
-
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -52,12 +58,52 @@ jobs:
       - name: Build desktop AppImage
         run: npm run tauri build
 
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: appimage-${{ matrix.arch }}
+          path: src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+
+  # Build the web bundle once, gather every arch's AppImage, and publish the
+  # GitHub release with all assets.
+  release:
+    needs: appimage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Sync app version with release tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          jq --arg v "$VERSION" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Package web build
+        run: (cd dist && zip -r "../tonearm-web-${{ github.ref_name }}.zip" .)
+
+      - name: Download AppImage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: appimages
+          pattern: appimage-*
+          merge-multiple: true
+
       - name: Create GitHub release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${{ github.ref_name }}" \
             "tonearm-web-${{ github.ref_name }}.zip" \
-            src-tauri/target/release/bundle/appimage/*.AppImage \
+            appimages/*.AppImage \
             --title "${{ github.ref_name }}" \
             --generate-notes
