@@ -15,8 +15,14 @@ autoCheckUpdates.subscribe(v => localStorage.setItem('subsonic_auto_update', Str
 //         | 'installing' | 'error'
 export const updateState = writable({ status: 'idle' })
 
-// A blue dot appears (on the Settings nav item) when this is true.
-export const updateAvailable = derived(updateState, s => s.status === 'available')
+// A blue dot appears (on the Settings nav item) when this is true. Gated on
+// automatic checks being enabled: if the user has opted out of auto-checks,
+// we don't nag them with the dot — a manual check still shows its result
+// inline in Settings.
+export const updateAvailable = derived(
+  [updateState, autoCheckUpdates],
+  ([s, auto]) => auto && s.status === 'available'
+)
 
 // Ask Rust for the running CPU arch and AppImage path. Only meaningful in
 // the desktop app; returns null in the browser.
