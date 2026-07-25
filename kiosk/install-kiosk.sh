@@ -4,11 +4,12 @@
 #
 # Downloads the latest Tonearm AppImage for this machine's CPU architecture
 # from GitHub Releases and installs a systemd *user* service that launches it
-# at login. Intended for a device that auto-logs into a graphical desktop
+# at graphical login. Intended for a device that auto-logs into a desktop
 # session (e.g. a Raspberry Pi running Raspberry Pi OS with desktop autologin).
 #
 # Usage:
-#   ./install-kiosk.sh            # install / update to the latest release
+#   ./install-kiosk.sh                  # install / update to the latest release
+#   ./install-kiosk.sh --appimage PATH  # install a local AppImage (offline/testing)
 #   ./install-kiosk.sh --uninstall
 #
 # No root required: everything is installed under the current user's home and
@@ -23,6 +24,8 @@ SERVICE_NAME="tonearm-kiosk.service"
 SERVICE_DIR="$HOME/.config/systemd/user"
 SERVICE_PATH="$SERVICE_DIR/$SERVICE_NAME"
 
+local_appimage=""
+
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mwarning:\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
@@ -33,80 +36,102 @@ uninstall() {
   rm -f "$SERVICE_PATH"
   systemctl --user daemon-reload 2>/dev/null || true
   rm -rf "$APP_DIR"
-  log "Uninstalled. (Autologin/lingering settings, if any, were left untouched.)"
+  log "Uninstalled. (Autologin settings, if any, were left untouched.)"
   exit 0
 }
 
-[ "${1:-}" = "--uninstall" ] && uninstall
-
-command -v curl >/dev/null || die "curl is required"
-command -v systemctl >/dev/null || die "systemctl is required (this expects a systemd system)"
-
-# Map the machine architecture to the tokens Tauri uses in AppImage filenames.
-arch="$(uname -m)"
-case "$arch" in
-  x86_64|amd64)   tokens="amd64 x86_64" ;;
-  aarch64|arm64)  tokens="aarch64 arm64" ;;
-  *) die "unsupported architecture: $arch" ;;
+case "${1:-}" in
+  --uninstall) uninstall ;;
+  --appimage)  local_appimage="${2:-}"; [ -n "$local_appimage" ] || die "--appimage needs a path" ;;
+  "") ;;
+  *) die "unknown option: $1" ;;
 esac
 
-log "Finding the latest Tonearm release for $arch"
-api_json="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest")" \
-  || die "could not reach the GitHub releases API"
+command -v systemctl >/dev/null || die "systemctl is required (this expects a systemd system)"
 
-# Collect every AppImage download URL in the release (no jq dependency).
-mapfile -t appimages < <(printf '%s\n' "$api_json" \
-  | grep -oE '"browser_download_url":[[:space:]]*"[^"]*\.AppImage"' \
-  | sed -E 's/.*"(https[^"]+)".*/\1/')
-
-[ "${#appimages[@]}" -gt 0 ] || die "the latest release has no .AppImage assets"
-
-# Prefer an asset tagged with this arch; fall back to a lone untagged one.
-url=""
-for candidate in "${appimages[@]}"; do
-  lower="$(printf '%s' "$candidate" | tr '[:upper:]' '[:lower:]')"
-  for t in $tokens; do
-    if printf '%s' "$lower" | grep -q "$t"; then url="$candidate"; break 2; fi
-  done
-done
-if [ -z "$url" ] && [ "${#appimages[@]}" -eq 1 ]; then
-  case "$(printf '%s' "${appimages[0]}" | tr '[:upper:]' '[:lower:]')" in
-    *x86_64*|*amd64*|*aarch64*|*arm64*) : ;;
-    *) url="${appimages[0]}" ;;
-  esac
-fi
-[ -n "$url" ] || die "no AppImage in the latest release matches this device's architecture ($arch)"
-
-log "Downloading $(basename "$url")"
 mkdir -p "$APP_DIR"
-tmp="$APP_DIR/.download.AppImage"
-curl -fSL --progress-bar "$url" -o "$tmp" || die "download failed"
-chmod +x "$tmp"
-mv -f "$tmp" "$APPIMAGE_PATH"
+
+if [ -n "$local_appimage" ]; then
+  # Install a local file instead of downloading (offline / testing).
+  [ -f "$local_appimage" ] || die "no such file: $local_appimage"
+  log "Installing local AppImage: $local_appimage"
+  install -m 0755 "$local_appimage" "$APPIMAGE_PATH"
+else
+  command -v curl >/dev/null || die "curl is required"
+
+  # Map the machine architecture to the tokens Tauri uses in AppImage names.
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64|amd64)   tokens="amd64 x86_64" ;;
+    aarch64|arm64)  tokens="aarch64 arm64" ;;
+    *) die "unsupported architecture: $arch" ;;
+  esac
+
+  log "Finding the latest Tonearm release for $arch"
+  api_json="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest")" \
+    || die "could not reach the GitHub releases API"
+
+  # Collect every AppImage download URL in the release (no jq dependency).
+  mapfile -t appimages < <(printf '%s\n' "$api_json" \
+    | grep -oE '"browser_download_url":[[:space:]]*"[^"]*\.AppImage"' \
+    | sed -E 's/.*"(https[^"]+)".*/\1/')
+
+  [ "${#appimages[@]}" -gt 0 ] || die "the latest release has no .AppImage assets"
+
+  # Prefer an asset tagged with this arch; fall back to a lone untagged one.
+  url=""
+  for candidate in "${appimages[@]}"; do
+    lower="$(printf '%s' "$candidate" | tr '[:upper:]' '[:lower:]')"
+    for t in $tokens; do
+      if printf '%s' "$lower" | grep -q "$t"; then url="$candidate"; break 2; fi
+    done
+  done
+  if [ -z "$url" ] && [ "${#appimages[@]}" -eq 1 ]; then
+    case "$(printf '%s' "${appimages[0]}" | tr '[:upper:]' '[:lower:]')" in
+      *x86_64*|*amd64*|*aarch64*|*arm64*) : ;;
+      *) url="${appimages[0]}" ;;
+    esac
+  fi
+  [ -n "$url" ] || die "no AppImage in the latest release matches this device's architecture ($arch)"
+
+  log "Downloading $(basename "$url")"
+  tmp="$APP_DIR/.download.AppImage"
+  curl -fSL --progress-bar "$url" -o "$tmp" || die "download failed"
+  chmod +x "$tmp"
+  mv -f "$tmp" "$APPIMAGE_PATH"
+fi
 log "Installed to $APPIMAGE_PATH"
 
 log "Writing systemd user service"
 mkdir -p "$SERVICE_DIR"
+# We start on default.target (reached when the autologin session begins) and
+# wait for the X server, rather than binding to graphical-session.target:
+# lightdm-based desktops (Raspberry Pi OS, XFCE, ...) don't reliably activate
+# graphical-session.target in the systemd --user instance, so a service bound
+# to it would never start. DISPLAY/XAUTHORITY are set for the single kiosk
+# seat, and APPIMAGE_EXTRACT_AND_RUN avoids needing FUSE.
 cat > "$SERVICE_PATH" <<EOF
 [Unit]
 Description=Tonearm kiosk
-# Start once the graphical session is up so the app has a display to draw on.
-After=graphical-session.target
-PartOf=graphical-session.target
 
 [Service]
 Type=simple
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+Environment=APPIMAGE_EXTRACT_AND_RUN=1
+# Wait (up to ~60s) for the X server to come up after autologin.
+ExecStartPre=/bin/sh -c 'for i in \$(seq 1 60); do [ -S /tmp/.X11-unix/X0 ] && exit 0; sleep 1; done; exit 0'
 ExecStart=$APPIMAGE_PATH
 Restart=on-failure
 RestartSec=3
 
 [Install]
-WantedBy=graphical-session.target
+WantedBy=default.target
 EOF
 
 systemctl --user daemon-reload
 systemctl --user enable "$SERVICE_NAME"
-log "Service enabled. It will start Tonearm on your next graphical login."
+log "Service enabled. It will start Tonearm on the next graphical login."
 
 cat <<'NOTE'
 
