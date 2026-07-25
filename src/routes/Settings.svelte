@@ -8,6 +8,7 @@
   import { mergeCaseDuplicates, splitCollabAlbums, collabSeparators, SEPARATOR_DEFS } from '../lib/stores/artistMerge.js'
   import { fullscreen } from '../lib/stores/fullscreen.js'
   import { onScreenKeyboard } from '../lib/stores/onScreenKeyboard.js'
+  import { kioskTest, setKioskTest } from '../lib/stores/kioskTest.js'
 
   function toggleCollabSeparator(key) {
     collabSeparators.update(keys =>
@@ -274,6 +275,19 @@
 
   <section>
     <h2>Developer</h2>
+    <div class="field">
+      <span class="label">Kiosk mode test</span>
+      <div class="options">
+        <button
+          class="option"
+          class:selected={$kioskTest}
+          onclick={() => setKioskTest(!$kioskTest)}
+        >
+          <span class="opt-label">{$kioskTest ? 'Disable' : 'Enable'}</span>
+          <span class="opt-desc">Turn fullscreen and the on-screen keyboard on together</span>
+        </button>
+      </div>
+    </div>
     <div class="field">
       <span class="label">Build</span>
       <span class="value mono">{__GIT_BRANCH__} @ {__GIT_HASH__}</span>
