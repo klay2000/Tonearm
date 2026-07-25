@@ -214,14 +214,6 @@
   </section>
 
   <section>
-    <h2>About</h2>
-    <div class="field">
-      <span class="label">Build</span>
-      <span class="value mono">{__GIT_BRANCH__} @ {__GIT_HASH__}</span>
-    </div>
-  </section>
-
-  <section>
     <h2>Server</h2>
     <div class="field">
       <span class="label">Connected to</span>
@@ -232,6 +224,14 @@
       <span class="value">{$auth?.username}</span>
     </div>
     <button class="logout-btn" onclick={logout}>Log out</button>
+  </section>
+
+  <section>
+    <h2>Developer</h2>
+    <div class="field">
+      <span class="label">Build</span>
+      <span class="value mono">{__GIT_BRANCH__} @ {__GIT_HASH__}</span>
+    </div>
   </section>
 </div>
 
