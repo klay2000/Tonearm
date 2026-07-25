@@ -9,6 +9,18 @@
   import { fullscreen } from '../lib/stores/fullscreen.js'
   import { onScreenKeyboard } from '../lib/stores/onScreenKeyboard.js'
   import { kioskTest, setKioskTest } from '../lib/stores/kioskTest.js'
+  import { isTauri } from '../lib/api/albumArtWindow.js'
+  import { autoCheckUpdates, updateState, checkForUpdates, installUpdate } from '../lib/stores/updates.js'
+
+  const updateStatusText = {
+    idle: '',
+    checking: 'Checking…',
+    uptodate: "You're up to date.",
+    available: '',
+    noarch: 'A newer version is out, but there\'s no build for this device.',
+    installing: 'Downloading and installing…',
+    error: '',
+  }
 
   function toggleCollabSeparator(key) {
     collabSeparators.update(keys =>
@@ -63,6 +75,11 @@
   const onScreenKeyboardOptions = [
     { value: true,  label: 'On',  desc: 'Show a touch keyboard when a text field is focused' },
     { value: false, label: 'Off', desc: 'Use a physical keyboard only' },
+  ]
+
+  const autoCheckUpdatesOptions = [
+    { value: true,  label: 'On',  desc: 'Check for a new version automatically at startup' },
+    { value: false, label: 'Off', desc: 'Only check when you press the button' },
   ]
 </script>
 
@@ -260,6 +277,55 @@
     </div>
   </section>
 
+  {#if isTauri}
+    <section>
+      <h2>Updates</h2>
+      <div class="field">
+        <span class="label">Current version</span>
+        <span class="value mono">{__APP_VERSION__}</span>
+      </div>
+      <div class="field">
+        <span class="label">Check</span>
+        <div class="update-controls">
+          <button
+            class="update-btn"
+            disabled={$updateState.status === 'checking' || $updateState.status === 'installing'}
+            onclick={checkForUpdates}
+          >
+            Check for updates
+          </button>
+          {#if $updateState.status === 'available'}
+            <button class="update-btn primary" onclick={installUpdate}>
+              Install update {$updateState.version}
+            </button>
+          {/if}
+          {#if $updateState.status === 'available'}
+            <span class="update-status accent">Version {$updateState.version} is available.</span>
+          {:else if $updateState.status === 'error'}
+            <span class="update-status error">Couldn't check: {$updateState.error}</span>
+          {:else if updateStatusText[$updateState.status]}
+            <span class="update-status">{updateStatusText[$updateState.status]}</span>
+          {/if}
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">Automatic checks</span>
+        <div class="options">
+          {#each autoCheckUpdatesOptions as opt}
+            <button
+              class="option"
+              class:selected={$autoCheckUpdates === opt.value}
+              onclick={() => autoCheckUpdates.set(opt.value)}
+            >
+              <span class="opt-label">{opt.label}</span>
+              <span class="opt-desc">{opt.desc}</span>
+            </button>
+          {/each}
+        </div>
+      </div>
+    </section>
+  {/if}
+
   <section>
     <h2>Server</h2>
     <div class="field">
@@ -369,4 +435,29 @@
     font-size: 13px;
   }
   .logout-btn:hover { background: color-mix(in srgb, #e05 10%, transparent); }
+
+  .update-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .update-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .update-btn:hover:not(:disabled) { border-color: var(--accent); }
+  .update-btn:disabled { opacity: 0.5; cursor: default; }
+  .update-btn.primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+  .update-status { font-size: 12px; color: var(--text-muted); }
+  .update-status.accent { color: var(--accent); }
+  .update-status.error { color: #e05; }
 </style>
