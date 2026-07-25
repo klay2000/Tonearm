@@ -1,0 +1,9 @@
+# Ignore file specific to docker/Dockerfile (BuildKit uses <dockerfile>.dockerignore
+# when present, instead of the root .dockerignore which excludes src-tauri —
+# that one is for the web-only nginx image, but this build needs src-tauri).
+.git
+node_modules
+dist
+dist-appimage
+src-tauri/target
+*.AppImage
