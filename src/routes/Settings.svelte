@@ -6,6 +6,7 @@
   import { greetingMode } from '../lib/stores/greeting.js'
   import { transcodeBitrate } from '../lib/stores/streaming.js'
   import { mergeCaseDuplicates, splitCollabAlbums, collabSeparators, SEPARATOR_DEFS } from '../lib/stores/artistMerge.js'
+  import { fullscreen } from '../lib/stores/fullscreen.js'
 
   function toggleCollabSeparator(key) {
     collabSeparators.update(keys =>
@@ -50,6 +51,11 @@
   const splitCollabAlbumsOptions = [
     { value: true,  label: 'On',  desc: 'Hide "Artist A feat. Artist B" entries and show those albums on each artist\'s own page' },
     { value: false, label: 'Off', desc: 'Show collaboration entries as their own separate artists' },
+  ]
+
+  const fullscreenOptions = [
+    { value: true,  label: 'On',  desc: 'Run the app fullscreen (for kiosk setups)' },
+    { value: false, label: 'Off', desc: 'Run in a normal window' },
   ]
 </script>
 
@@ -204,6 +210,25 @@
             class="option"
             class:selected={$transcodeBitrate === opt.value}
             onclick={() => transcodeBitrate.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kiosk</h2>
+    <div class="field">
+      <span class="label">Fullscreen</span>
+      <div class="options">
+        {#each fullscreenOptions as opt}
+          <button
+            class="option"
+            class:selected={$fullscreen === opt.value}
+            onclick={() => fullscreen.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>
