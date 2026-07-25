@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+
+const appVersion = JSON.parse(readFileSync(new URL('./package.json', import.meta.url))).version
 
 function gitInfo() {
   try {
@@ -19,6 +22,7 @@ export default defineConfig({
   define: {
     __GIT_HASH__: JSON.stringify(hash),
     __GIT_BRANCH__: JSON.stringify(branch),
+    __APP_VERSION__: JSON.stringify(appVersion),
   },
   server: {
     host: '0.0.0.0',

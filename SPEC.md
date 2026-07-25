@@ -66,6 +66,8 @@ subsonic-client/
     │   │   ├── themeSchedule.js # pure scheduled dark/light helpers (+ themeSchedule.test.js)
     │   │   ├── themeTimes.js  # dark/light start-time preferences (localStorage)
     │   │   ├── streaming.js   # transcode bitrate preference (localStorage)
+    │   │   ├── updates.js     # desktop auto-update: check GitHub releases, install (Tauri-only)
+    │   │   ├── updateCheck.js # pure version-compare + asset-picking (+ updateCheck.test.js)
     │   │   └── viewMode.js    # per-view list/shelf preference (localStorage)
     │   └── components/
     │       ├── Logo.svelte         # "Tonearm" wordmark (Neuton), used in Header and Login
@@ -235,6 +237,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Player state (queue, volume, shuffle, repeat) persisted per account in localStorage
 - [x] Settings screen: theme preference, shuffle mode, volume normalization, streaming quality, build info (branch + commit)
 - [x] Album art mode (desktop app only): collapses the UI to cover art with hover play/pause/stop/next/prev controls, and shrinks the OS window
+- [x] Auto-updates (desktop app only): checks GitHub Releases for a newer AppImage matching the device's CPU arch, shows a blue dot on Settings + an "Install update" button that downloads/swaps the AppImage and relaunches; automatic startup checks can be turned off in Settings. Rust commands `update_target`/`install_update` in `src-tauri/src/lib.rs`.
 - [x] Keyboard shortcuts
 - [x] App name: Tonearm
 - [x] Desktop app: Tauri v2 wrapper, builds as a Linux AppImage

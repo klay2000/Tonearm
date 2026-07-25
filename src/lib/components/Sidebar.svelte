@@ -1,5 +1,6 @@
 <script>
   import { router } from '../stores/router.js'
+  import { updateAvailable } from '../stores/updates.js'
 
   const links = [
     { href: '#/', label: 'Home' },
@@ -31,6 +32,9 @@
         class:active={currentPath === link.href.slice(1)}
       >
         {link.label}
+        {#if link.href === '#/settings' && $updateAvailable}
+          <span class="update-dot" title="An update is available"></span>
+        {/if}
       </a>
     {/each}
   </div>
@@ -61,5 +65,14 @@
   a.active {
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .update-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: middle;
   }
 </style>

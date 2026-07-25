@@ -6,6 +6,7 @@
   import { ping } from './lib/api/subsonic.js'
   import { albumArtMode } from './lib/stores/albumArtMode.js'
   import { enterAlbumArtWindow, exitAlbumArtWindow, isTauri } from './lib/api/albumArtWindow.js'
+  import { maybeAutoCheck } from './lib/stores/updates.js'
   import Login from './routes/Login.svelte'
   import LoadingScreen from './lib/components/LoadingScreen.svelte'
   import Header from './lib/components/Header.svelte'
@@ -25,6 +26,9 @@
   if (checkingConnection) {
     ping().catch(() => {}).finally(() => { checkingConnection = false })
   }
+
+  // On the desktop app, check for a newer release at startup (if enabled).
+  maybeAutoCheck()
 
   let { path, params } = $derived($router)
 
