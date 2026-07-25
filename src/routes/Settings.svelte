@@ -6,6 +6,7 @@
   import { greetingMode } from '../lib/stores/greeting.js'
   import { transcodeBitrate } from '../lib/stores/streaming.js'
   import { mergeCaseDuplicates, splitCollabAlbums, collabSeparators, SEPARATOR_DEFS } from '../lib/stores/artistMerge.js'
+  import { onScreenKeyboard } from '../lib/stores/onScreenKeyboard.js'
 
   function toggleCollabSeparator(key) {
     collabSeparators.update(keys =>
@@ -50,6 +51,11 @@
   const splitCollabAlbumsOptions = [
     { value: true,  label: 'On',  desc: 'Hide "Artist A feat. Artist B" entries and show those albums on each artist\'s own page' },
     { value: false, label: 'Off', desc: 'Show collaboration entries as their own separate artists' },
+  ]
+
+  const onScreenKeyboardOptions = [
+    { value: true,  label: 'On',  desc: 'Show a touch keyboard when a text field is focused' },
+    { value: false, label: 'Off', desc: 'Use a physical keyboard only' },
   ]
 </script>
 
@@ -204,6 +210,25 @@
             class="option"
             class:selected={$transcodeBitrate === opt.value}
             onclick={() => transcodeBitrate.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Kiosk</h2>
+    <div class="field">
+      <span class="label">On-screen keyboard</span>
+      <div class="options">
+        {#each onScreenKeyboardOptions as opt}
+          <button
+            class="option"
+            class:selected={$onScreenKeyboard === opt.value}
+            onclick={() => onScreenKeyboard.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>
