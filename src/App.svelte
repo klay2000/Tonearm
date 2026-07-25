@@ -14,6 +14,7 @@
   import Sidebar from './lib/components/Sidebar.svelte'
   import PlayerBar from './lib/components/PlayerBar.svelte'
   import AlbumArtMode from './lib/components/AlbumArtMode.svelte'
+  import OnScreenKeyboard from './lib/components/OnScreenKeyboard.svelte'
   import Home from './routes/Home.svelte'
   import Artists from './routes/Artists.svelte'
   import Artist from './routes/Artist.svelte'
@@ -116,6 +117,8 @@
 {:else}
   <Login />
 {/if}
+
+<OnScreenKeyboard />
 
 <style>
   :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }

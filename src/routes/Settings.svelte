@@ -7,6 +7,7 @@
   import { transcodeBitrate } from '../lib/stores/streaming.js'
   import { mergeCaseDuplicates, splitCollabAlbums, collabSeparators, SEPARATOR_DEFS } from '../lib/stores/artistMerge.js'
   import { fullscreen } from '../lib/stores/fullscreen.js'
+  import { onScreenKeyboard } from '../lib/stores/onScreenKeyboard.js'
 
   function toggleCollabSeparator(key) {
     collabSeparators.update(keys =>
@@ -56,6 +57,11 @@
   const fullscreenOptions = [
     { value: true,  label: 'On',  desc: 'Run the app fullscreen (for kiosk setups)' },
     { value: false, label: 'Off', desc: 'Run in a normal window' },
+  ]
+
+  const onScreenKeyboardOptions = [
+    { value: true,  label: 'On',  desc: 'Show a touch keyboard when a text field is focused' },
+    { value: false, label: 'Off', desc: 'Use a physical keyboard only' },
   ]
 </script>
 
@@ -229,6 +235,21 @@
             class="option"
             class:selected={$fullscreen === opt.value}
             onclick={() => fullscreen.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">On-screen keyboard</span>
+      <div class="options">
+        {#each onScreenKeyboardOptions as opt}
+          <button
+            class="option"
+            class:selected={$onScreenKeyboard === opt.value}
+            onclick={() => onScreenKeyboard.set(opt.value)}
           >
             <span class="opt-label">{opt.label}</span>
             <span class="opt-desc">{opt.desc}</span>
