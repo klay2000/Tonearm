@@ -1,0 +1,96 @@
+# Cross-compiles the Tonearm aarch64 AppImage on an x86_64 host WITHOUT QEMU
+# emulating the (slow) Rust build. The container is the host's native arch;
+# only the Rust *target* is aarch64, linked against an arm64 multiarch sysroot.
+# The small AppImage packaging tools (linuxdeploy/appimagetool, which are
+# aarch64) run via the host's registered qemu-aarch64 binfmt handler.
+#
+# Build with docker/build.sh aarch64 --cross  (see that script).
+
+FROM debian:trixie AS build
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# arm64 as a foreign architecture so we can install its -dev/runtime libs as a
+# sysroot to link against.
+RUN dpkg --add-architecture arm64 && apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates curl wget file git xz-utils \
+      build-essential pkg-config patchelf desktop-file-utils squashfs-tools \
+      libfuse2 \
+      nodejs npm \
+      # aarch64 cross toolchain (host-native binaries emitting aarch64 code)
+      gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+      # arm64 sysroot: the webview/GTK/appindicator dev libs Tauri links to
+      libwebkit2gtk-4.1-dev:arm64 libgtk-3-dev:arm64 librsvg2-dev:arm64 \
+      libayatana-appindicator3-dev:arm64 libxdo-dev:arm64 libssl-dev:arm64 \
+      # arm64 gstreamer runtime, so linuxdeploy can bundle media playback
+      gstreamer1.0-plugins-base:arm64 gstreamer1.0-plugins-good:arm64 \
+      gstreamer1.0-plugins-bad:arm64 gstreamer1.0-plugins-ugly:arm64 \
+      gstreamer1.0-libav:arm64 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Rust toolchain + aarch64 target.
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN rustup target add aarch64-unknown-linux-gnu
+
+# Cross-compile wiring: aarch64 linker + C/C++ compilers, and a pkg-config that
+# only ever sees the arm64 sysroot (never the host's x86_64 .pc files).
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc \
+    CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc \
+    CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ \
+    AR_aarch64_unknown_linux_gnu=aarch64-linux-gnu-ar \
+    PKG_CONFIG=aarch64-linux-gnu-pkg-config \
+    PKG_CONFIG_ALLOW_CROSS=1 \
+    PKG_CONFIG_SYSROOT_DIR=/ \
+    PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig \
+    # AppImage tooling can't use FUSE in a container; and its host `strip` can't
+    # touch aarch64 binaries, so leave stripping to the (aarch64) toolchain.
+    APPIMAGE_EXTRACT_AND_RUN=1 \
+    NO_STRIP=true
+
+WORKDIR /src
+COPY . .
+
+RUN npm ci
+
+# Cross-compile + let Tauri populate the AppDir. Its final step (linuxdeploy,
+# an aarch64 binary) aborts under qemu-user — that's expected and tolerated:
+# by then the AppDir already holds the binary, AppRun, .desktop and icon.
+RUN npm run tauri build -- --target aarch64-unknown-linux-gnu \
+    || echo "note: tauri's linuxdeploy step failed under qemu (expected); packing AppDir manually below"
+
+# Pack the AppDir into an aarch64 AppImage using the NATIVE x86_64 appimagetool
+# with the aarch64 type-2 runtime supplied as a data blob (--runtime-file). No
+# aarch64 code executes here, so there's no qemu involved at all. The result is
+# a thin AppImage that resolves webkit/gtk/gstreamer against the target's system
+# libs (identical Debian trixie versions on the Pi).
+RUN set -eux; \
+    B=/src/src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/appimage; \
+    appdir="$(find "$B" -maxdepth 1 -name '*.AppDir' | head -1)"; \
+    test -n "$appdir"; \
+    curl -fsSL -o /usr/local/bin/appimagetool \
+      https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage; \
+    chmod +x /usr/local/bin/appimagetool; \
+    curl -fsSL -o /tmp/runtime-aarch64 \
+      https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-aarch64; \
+    ver="$(node -p "require('/src/src-tauri/tauri.conf.json').version")"; \
+    # Tauri leaves the AppDir root's .desktop and .DirIcon as ABSOLUTE symlinks
+    # into the build tree, and never drops the Icon= file (app.png) at the root
+    # (linuxdeploy would normally relativize the symlinks and place the icon).
+    # Those symlinks dangle at runtime, so AppRun can't read Exec= -> exit 127.
+    # Replace them with real files.
+    rm -f "$appdir/.DirIcon" "$appdir"/*.desktop; \
+    cp "$(find "$appdir/usr/share/applications" -name '*.desktop' | head -1)" "$appdir/"; \
+    icon="$(find "$appdir/usr/share/icons" -name 'app.png' -printf '%s %p\n' 2>/dev/null | sort -n | tail -1 | cut -d' ' -f2-)"; \
+    test -n "$icon"; \
+    cp "$icon" "$appdir/app.png"; \
+    cp "$icon" "$appdir/.DirIcon"; \
+    cd "$B"; \
+    ARCH=aarch64 appimagetool --appimage-extract-and-run \
+      --runtime-file /tmp/runtime-aarch64 "$(basename "$appdir")" \
+      "Tonearm_${ver}_aarch64.AppImage"; \
+    ls -la ./*.AppImage
+
+# Export stage: only the AppImage(s), for `--output type=local,dest=...`.
+FROM scratch AS export
+COPY --from=build /src/src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/appimage/*.AppImage /
