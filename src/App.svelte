@@ -6,12 +6,15 @@
   import { ping } from './lib/api/subsonic.js'
   import { albumArtMode } from './lib/stores/albumArtMode.js'
   import { enterAlbumArtWindow, exitAlbumArtWindow, isTauri } from './lib/api/albumArtWindow.js'
+  import { fullscreen } from './lib/stores/fullscreen.js'
+  import { applyFullscreen } from './lib/api/fullscreen.js'
   import Login from './routes/Login.svelte'
   import LoadingScreen from './lib/components/LoadingScreen.svelte'
   import Header from './lib/components/Header.svelte'
   import Sidebar from './lib/components/Sidebar.svelte'
   import PlayerBar from './lib/components/PlayerBar.svelte'
   import AlbumArtMode from './lib/components/AlbumArtMode.svelte'
+  import OnScreenKeyboard from './lib/components/OnScreenKeyboard.svelte'
   import Home from './routes/Home.svelte'
   import Artists from './routes/Artists.svelte'
   import Artist from './routes/Artist.svelte'
@@ -45,6 +48,23 @@
   $effect(() => {
     if ($albumArtMode) enterAlbumArtWindow()
     else exitAlbumArtWindow()
+  })
+
+  // Apply the fullscreen preference (for kiosk mode). Runs on startup and
+  // whenever the setting changes; on desktop this re-applies on launch.
+  $effect(() => {
+    applyFullscreen($fullscreen)
+  })
+
+  // Keep the setting in sync if the user leaves browser fullscreen manually
+  // (Esc / F11), so the Settings checkbox doesn't get stuck showing "On".
+  $effect(() => {
+    if (isTauri) return
+    const onChange = () => {
+      if (!document.fullscreenElement && get(fullscreen)) fullscreen.set(false)
+    }
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
   })
 
   // On Tauri, hide the main UI entirely while Album Art Mode is active.
@@ -97,6 +117,8 @@
 {:else}
   <Login />
 {/if}
+
+<OnScreenKeyboard />
 
 <style>
   :global(*, *::before, *::after) { box-sizing: border-box; margin: 0; padding: 0; }
