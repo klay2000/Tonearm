@@ -132,7 +132,7 @@ docker run -d -p 8080:80 tonearm
 GitHub Actions workflows live in `.github/workflows/`:
 
 - **`ci.yml`** — runs on every push/PR to `main`: `npm ci`, `npm run build`, `npm test`.
-- **`release.yml`** — runs when a tag matching `x.y.z` (e.g. `1.2.0`) is pushed: builds the Tauri AppImage for **both x86_64 and aarch64** (the latter on GitHub's native `ubuntu-24.04-arm` runner, so Raspberry Pi / arm64 devices get a matching build), builds and zips the web bundle, and publishes all assets on a GitHub release named after the tag (via `gh release create`).
+- **`release.yml`** — runs when a tag matching `x.y.z` (e.g. `1.2.0`) or a pre-release `x.y.z-suffix` (e.g. `1.3.0-beta`, published as a GitHub pre-release) is pushed: builds the Tauri AppImage for **both x86_64 and aarch64** (the latter on GitHub's native `ubuntu-24.04-arm` runner, so Raspberry Pi / arm64 devices get a matching build), builds and zips the web bundle, and publishes all assets on a GitHub release named after the tag (via `gh release create`).
 
 ---
 

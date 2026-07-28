@@ -88,7 +88,7 @@ Hash-based (`#/path`). Routes are matched in `App.svelte`'s `route()` function. 
 - Exception: quick, narrowly-scoped checks needed to debug your own change while coding (e.g. confirming a build error is fixed) are fine — the line is autonomously *validating the feature* end-to-end on the user's behalf.
 - Unit tests (`npm test`, Node's built-in test runner) cover pure logic only — see `src/lib/stores/sunTimes.js`, `queueLogic.js`, and `hashRoute.js` for the established pattern of splitting pure helpers out of stores so they can run under plain Node. Don't try to unit-test Svelte components or browser-dependent store glue.
 - When you find and fix a bug, add a regression test for it alongside the fix (in the same PR) — but don't chase full coverage. Test the pure logic that broke, not every surrounding branch.
-- `npm run build` and `npm test` run in CI on every push/PR to `main` (`.github/workflows/ci.yml`); a tagged commit matching `x.x.x` triggers `.github/workflows/release.yml`, which builds the web bundle and the Tauri AppImage and publishes them as a GitHub release.
+- `npm run build` and `npm test` run in CI on every push/PR to `main` (`.github/workflows/ci.yml`); a tagged commit matching `x.x.x` (or a pre-release `x.x.x-suffix` like `1.3.0-beta`) triggers `.github/workflows/release.yml`, which builds the web bundle and the Tauri AppImage and publishes them as a GitHub release.
 
 **Pull requests**
 - Open a PR when the work is ready to test.

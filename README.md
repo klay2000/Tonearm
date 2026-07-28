@@ -68,7 +68,7 @@ GitHub Actions (`.github/workflows/`):
 - **`ci.yml`** — on every push/PR to `main`: install, `npm run build`, `npm test`.
 - **`release.yml`** — on pushing a version tag like `1.2.3`: builds the web bundle and the Tauri AppImage, then publishes both as a GitHub release named after the tag.
 
-To cut a release: tag a commit on `main` with a plain `x.y.z` version (e.g. `git tag 1.2.0 && git push origin 1.2.0`).
+To cut a release: tag a commit on `main` with a plain `x.y.z` version (e.g. `git tag 1.2.0 && git push origin 1.2.0`). A tag with a pre-release suffix (e.g. `1.3.0-beta`) also triggers a build and is published as a GitHub pre-release.
 
 ## Desktop app (Tauri)
 
