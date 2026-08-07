@@ -18,6 +18,7 @@ A minimal, modern, self-hosted music client for [Gonic](https://github.com/sentr
 - Artist avatars sourced from TheAudioDB and Wikimedia
 - Auto dark/light theme by user-configured start times, switching live while open (or set manually)
 - Touch-friendly mode that drops hover effects for touchscreens
+- Kiosk interface scale slider (1×–4×) for viewing from a distance
 - Player state (queue, volume, shuffle, repeat) persisted across sessions
 - Volume normalization: attenuates loud tracks using ReplayGain tags from your library (optional)
 - Settings screen: theme preference, shuffle mode, volume normalization, build info

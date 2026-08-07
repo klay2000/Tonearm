@@ -2,6 +2,8 @@
   import { themePref } from '../lib/stores/theme.js'
   import { darkStart, lightStart, liveSwitch } from '../lib/stores/themeTimes.js'
   import { touchMode } from '../lib/stores/touchMode.js'
+  import { uiScale } from '../lib/stores/uiScale.js'
+  import { clampScale, formatScale, MIN_SCALE, MAX_SCALE, SCALE_STEP, SCALE_MARKERS } from '../lib/stores/uiScaleLogic.js'
   import { auth, logout } from '../lib/stores/auth.js'
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
@@ -287,6 +289,37 @@
   <section>
     <h2>Kiosk</h2>
     <div class="field">
+      <span class="label">Interface scale</span>
+      <div class="scale-control">
+        <div class="scale-row">
+          <input
+            class="scale-slider"
+            type="range"
+            min={MIN_SCALE}
+            max={MAX_SCALE}
+            step={SCALE_STEP}
+            list="scale-markers"
+            value={$uiScale}
+            oninput={(e) => uiScale.set(clampScale(e.target.value))}
+          />
+          <span class="scale-value mono">{formatScale($uiScale)}</span>
+        </div>
+        <datalist id="scale-markers">
+          {#each SCALE_MARKERS as m}<option value={m}></option>{/each}
+        </datalist>
+        <div class="scale-ticks">
+          {#each SCALE_MARKERS as m}
+            <button
+              class="scale-tick"
+              style="left: calc(7px + {((m - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100}% - {((m - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 14}px)"
+              onclick={() => uiScale.set(m)}
+            >{formatScale(m)}</button>
+          {/each}
+        </div>
+        <span class="opt-desc">Sizes up the whole interface for a kiosk screen you view from a distance.</span>
+      </div>
+    </div>
+    <div class="field">
       <span class="label">Fullscreen</span>
       <div class="options">
         {#each fullscreenOptions as opt}
@@ -444,6 +477,51 @@
     font-family: inherit;
   }
   .time-input:focus { border-color: var(--accent); outline: none; }
+
+  .scale-control { display: flex; flex-direction: column; gap: 6px; max-width: 320px; }
+  .scale-row { display: flex; align-items: center; gap: 12px; }
+  .scale-value { min-width: 34px; }
+  .scale-slider {
+    flex: 1;
+    appearance: none;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .scale-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid var(--surface);
+    cursor: pointer;
+  }
+  .scale-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid var(--surface);
+    cursor: pointer;
+  }
+  /* Markers sit under the track, aligned to their value; clicking one snaps. */
+  .scale-ticks { position: relative; height: 16px; margin-right: 46px; }
+  .scale-tick {
+    position: absolute;
+    transform: translateX(-50%);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-family: monospace;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  :global(html:not(.no-hover)) .scale-tick:hover { color: var(--accent); }
 
   .options { display: flex; gap: 8px; flex-wrap: wrap; }
   .option {

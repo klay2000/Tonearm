@@ -66,6 +66,8 @@ subsonic-client/
     │   │   ├── themeSchedule.js # pure scheduled dark/light helpers (+ themeSchedule.test.js)
     │   │   ├── themeTimes.js  # dark/light start-time + live-switch preferences (localStorage)
     │   │   ├── touchMode.js   # touch-friendly mode: disables hover effects (localStorage)
+    │   │   ├── uiScale.js     # kiosk interface scale, applied as CSS zoom (localStorage)
+    │   │   ├── uiScaleLogic.js # pure scale clamping/snapping (+ uiScaleLogic.test.js)
     │   │   ├── streaming.js   # transcode bitrate preference (localStorage)
     │   │   ├── updates.js     # desktop auto-update: check GitHub releases, install (Tauri-only)
     │   │   ├── updateCheck.js # pure version-compare + asset-picking (+ updateCheck.test.js)
