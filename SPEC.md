@@ -64,7 +64,7 @@ subsonic-client/
     │   │   ├── hashRoute.js   # pure #hash parsing (+ hashRoute.test.js)
     │   │   ├── theme.js       # dark/light/auto theme
     │   │   ├── themeSchedule.js # pure scheduled dark/light helpers (+ themeSchedule.test.js)
-    │   │   ├── themeTimes.js  # dark/light start-time preferences (localStorage)
+    │   │   ├── themeTimes.js  # dark/light start-time + live-switch preferences (localStorage)
     │   │   ├── streaming.js   # transcode bitrate preference (localStorage)
     │   │   ├── updates.js     # desktop auto-update: check GitHub releases, install (Tauri-only)
     │   │   ├── updateCheck.js # pure version-compare + asset-picking (+ updateCheck.test.js)
@@ -214,6 +214,8 @@ Collaboration artist names (`feat.`, `ft.`, `&`) are stripped to the primary art
 
 Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `prefers-color-scheme`.
 
+In `auto` mode the theme is decided at startup from the configured start times. With **Switch while running** on (the default), `theme.js` also arms a `setTimeout` for exactly the next configured boundary — `msUntilNextSwitch()` in `themeSchedule.js` — flipping the theme and re-arming as each one passes, plus a re-check on `visibilitychange` since timers don't survive suspend. Turning the setting off leaves the startup decision standing until the app restarts.
+
 ---
 
 ## Implemented
@@ -232,7 +234,7 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Play / shuffle entire library
 - [x] Album art scraping: TheAudioDB → MusicBrainz → Cover Art Archive fallback
 - [x] Artist avatars: lazy-loaded with TheAudioDB/Wikidata/initials fallback
-- [x] Dark/light mode toggle + auto theme by user-configured start times (Settings)
+- [x] Dark/light mode toggle + auto theme by user-configured start times (Settings), switching live while the app is open (optional)
 - [x] Login screen with server URL + credentials
 - [x] Player state (queue, volume, shuffle, repeat) persisted per account in localStorage
 - [x] Settings screen: theme preference, shuffle mode, volume normalization, streaming quality, build info (branch + commit)

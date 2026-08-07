@@ -1,6 +1,6 @@
 <script>
   import { themePref } from '../lib/stores/theme.js'
-  import { darkStart, lightStart } from '../lib/stores/themeTimes.js'
+  import { darkStart, lightStart, liveSwitch } from '../lib/stores/themeTimes.js'
   import { auth, logout } from '../lib/stores/auth.js'
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
@@ -32,6 +32,11 @@
     { value: 'auto',  label: 'Auto',  desc: 'Switch at set times' },
     { value: 'light', label: 'Light', desc: 'Always light' },
     { value: 'dark',  label: 'Dark',  desc: 'Always dark' },
+  ]
+
+  const liveSwitchOptions = [
+    { value: true,  label: 'On',  desc: 'Change theme as soon as a set time passes, even while the app is open' },
+    { value: false, label: 'Off', desc: 'Only pick the theme when the app starts' },
   ]
 
   const greetingModeOptions = [
@@ -121,6 +126,21 @@
           value={$lightStart}
           onchange={(e) => lightStart.set(e.target.value)}
         />
+      </div>
+      <div class="field">
+        <span class="label">Switch while running</span>
+        <div class="options">
+          {#each liveSwitchOptions as opt}
+            <button
+              class="option"
+              class:selected={$liveSwitch === opt.value}
+              onclick={() => liveSwitch.set(opt.value)}
+            >
+              <span class="opt-label">{opt.label}</span>
+              <span class="opt-desc">{opt.desc}</span>
+            </button>
+          {/each}
+        </div>
       </div>
     {/if}
   </section>
