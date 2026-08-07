@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { fmt, resolveDuration, shouldSubmitScrobble } from './playerLogic.js'
+import { fmt, resolveDuration, shouldSubmitScrobble, canSeekTo } from './playerLogic.js'
 
 test('fmt formats whole minutes and seconds', () => {
   assert.equal(fmt(0), '0:00')
@@ -49,4 +49,42 @@ test('shouldSubmitScrobble is false when duration is unknown', () => {
   assert.equal(shouldSubmitScrobble(300, 0), false)
   assert.equal(shouldSubmitScrobble(300, NaN), false)
   assert.equal(shouldSubmitScrobble(300, Infinity), false)
+})
+
+// Stand-in for the browser's TimeRanges.
+function ranges(...pairs) {
+  return {
+    length: pairs.length,
+    start: i => pairs[i][0],
+    end: i => pairs[i][1],
+  }
+}
+
+test('canSeekTo allows a target inside a buffered range', () => {
+  assert.equal(canSeekTo(ranges([0, 240]), 120), true)
+  assert.equal(canSeekTo(ranges([0, 240]), 0), true)
+  assert.equal(canSeekTo(ranges([0, 240]), 240), true)
+})
+
+test('canSeekTo refuses a target outside every range', () => {
+  assert.equal(canSeekTo(ranges([0, 60]), 200), false)
+  assert.equal(canSeekTo(ranges([100, 200]), 20), false)
+})
+
+test('canSeekTo refuses an unseekable stream (regression: #105)', () => {
+  // A chunked transcode reports no seekable ranges at all; seeking it anyway
+  // wedged the kiosk's media pipeline and took play/pause down with it.
+  assert.equal(canSeekTo(ranges(), 30), false)
+  assert.equal(canSeekTo(null, 30), false)
+  assert.equal(canSeekTo(undefined, 30), false)
+})
+
+test('canSeekTo refuses non-finite targets', () => {
+  assert.equal(canSeekTo(ranges([0, 240]), NaN), false)
+  assert.equal(canSeekTo(ranges([0, 240]), Infinity), false)
+})
+
+test('canSeekTo checks every range, not just the first', () => {
+  assert.equal(canSeekTo(ranges([0, 30], [100, 200]), 150), true)
+  assert.equal(canSeekTo(ranges([0, 30], [100, 200]), 60), false)
 })

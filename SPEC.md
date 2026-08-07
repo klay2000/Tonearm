@@ -158,8 +158,17 @@ u=<username>&p=<password>&v=1.16.1&c=tonearm&f=json
 | `getAlbum?id=` | Tracks for a specific album |
 | `getAlbumList2?type=` | `newest` / `random` for home page shelves |
 | `search3?query=` | Unified search |
-| `stream?id=` | Audio stream |
+| `stream?id=` | Audio stream (`format=raw` for Original, else `maxBitRate`+`format=mp3`) |
 | `getCoverArt?id=` | Album/track artwork |
+
+**Seeking.** Only a `format=raw` stream is seekable: the server serves the file
+directly, answering range requests with `206` + `Accept-Ranges` + a real
+`Content-Length`. A transcoded stream arrives chunked with none of those, so the
+media element reports no seekable ranges. Assigning `currentTime` on one anyway
+leaves WebKitGTK (the desktop/kiosk webview) stuck in a seek that never
+completes, which takes play/pause down with it — so `canSeekTo()` in
+`playerLogic.js` gates every seek on the element's `seekable` ranges, and a seek
+on an unseekable stream is skipped rather than attempted.
 
 ---
 
@@ -233,7 +242,7 @@ In `auto` mode the theme is decided at startup from the configured start times. 
 - [x] Queue: view, reorder (drag), remove, clear, click-to-play, play next / add to queue
 - [x] Shuffle: random-next mode or reorder-queue mode (configurable in Settings)
 - [x] Volume normalization: attenuates loud tracks by scaling the `<audio>` element's volume using per-track ReplayGain (configurable in Settings, off by default — requires ReplayGain tags in your library, e.g. from `rsgain`). Can only turn loud tracks down, not boost quiet ones (volume is capped at 1) — avoids routing through Web Audio, which silences cross-origin streams.
-- [x] Streaming quality: configurable in Settings (Original / 320 / 192 / 128 kbps). Non-original options request server-side transcoding to MP3 via `maxBitRate`/`format` on the Subsonic `stream` endpoint, to save bandwidth.
+- [x] Streaming quality: configurable in Settings (Original / 320 / 192 / 128 kbps). Non-original options request server-side transcoding to MP3 via `maxBitRate`/`format` on the Subsonic `stream` endpoint, to save bandwidth. **Original sends `format=raw`** — without it the server applies its own transcode profile and streams the result chunked, with no `Content-Length` or `Accept-Ranges`, which makes the stream unseekable.
 - [x] Repeat: off / repeat-all / repeat-one
 - [x] Play artist / shuffle artist: fetches all albums in parallel and queues tracks
 - [x] Play / shuffle entire library

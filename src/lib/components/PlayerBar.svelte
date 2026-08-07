@@ -2,7 +2,7 @@
   import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat, normalizeVolume } from '../stores/player.js'
   import { coverUrl, streamUrl, scrobble } from '../api/subsonic.js'
   import { computeReplayGain } from '../stores/replayGain.js'
-  import { fmt, resolveDuration, shouldSubmitScrobble } from '../stores/playerLogic.js'
+  import { fmt, resolveDuration, shouldSubmitScrobble, canSeekTo } from '../stores/playerLogic.js'
   import { toggleAlbumArtMode } from '../stores/albumArtMode.js'
   import { isTauri } from '../api/albumArtWindow.js'
   import { navigate } from '../stores/router.js'
@@ -57,10 +57,15 @@
     }
   })
 
-  // React to play/pause
+  // React to play/pause. If play() fails for a real reason, put the store back
+  // so the button matches what's actually happening — otherwise the UI claims
+  // to be playing forever. AbortError is expected whenever a new src
+  // interrupts a pending play, so it isn't a failure.
   $effect(() => {
     if (!audio) return
-    if ($playing) audio.play().catch(() => {})
+    if ($playing) audio.play().catch(err => {
+      if (err?.name !== 'AbortError') playing.set(false)
+    })
     else audio.pause()
   })
 
@@ -69,7 +74,7 @@
   // store and element have meaningfully diverged.
   $effect(() => {
     if (audio && Math.abs(audio.currentTime - $currentTime) > 1) {
-      audio.currentTime = $currentTime
+      if (canSeekTo(audio.seekable, $currentTime)) audio.currentTime = $currentTime
     }
   })
 
@@ -112,9 +117,16 @@
     if (!scrubbing) return
     scrubRatio = getRatio(e)
     const target = scrubRatio * $duration
-    currentTime.set(target)
     scrubbing = false
-    if (audio && $duration) audio.currentTime = target
+
+    if (!audio || !$duration) return
+    // An unseekable stream (a chunked server-side transcode) can't be scrubbed
+    // — attempting it anyway hangs playback. Leave the position alone and let
+    // the bar snap back to where the track actually is.
+    if (!canSeekTo(audio.seekable, target)) return
+
+    currentTime.set(target)
+    audio.currentTime = target
   }
 
   let muted = $state(false)

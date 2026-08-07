@@ -17,6 +17,28 @@ export function resolveDuration(audioDuration, previous) {
   return Number.isFinite(audioDuration) && audioDuration > 0 ? audioDuration : previous
 }
 
+// Whether a seek to `target` is actually possible on a media element.
+//
+// A server-side transcode arrives chunked, with no Content-Length and no
+// Accept-Ranges, so the stream isn't byte-seekable. On the kiosk (WebKitGTK /
+// GStreamer) assigning currentTime anyway leaves the pipeline stuck in a seek
+// that never completes, which takes play/pause down with it — so check first
+// and skip the seek rather than wedge playback.
+//
+// `seekable` is a TimeRanges (or anything with the same length/start/end
+// shape). A tiny tolerance covers ranges reported a hair short of the target.
+export function canSeekTo(seekable, target) {
+  if (!seekable || !Number.isFinite(target)) return false
+
+  const TOLERANCE = 0.5
+  for (let i = 0; i < seekable.length; i++) {
+    if (target >= seekable.start(i) - TOLERANCE && target <= seekable.end(i) + TOLERANCE) {
+      return true
+    }
+  }
+  return false
+}
+
 // Last.fm/ListenBrainz scrobble convention: a track counts as "played" once
 // it has been listened to for at least 4 minutes, or at least half its
 // duration, whichever comes first. Returns false if duration is unknown.
