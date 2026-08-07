@@ -456,11 +456,11 @@
   .clickable {
     cursor: pointer;
   }
-  .clickable:hover {
+  :global(html:not(.no-hover)) .clickable:hover {
     opacity: 0.75;
   }
-  .title.clickable:hover,
-  .artist.clickable:hover {
+  :global(html:not(.no-hover)) .title.clickable:hover,
+  :global(html:not(.no-hover)) .artist.clickable:hover {
     text-decoration: underline;
   }
   .controls {
@@ -477,7 +477,7 @@
     align-items: center;
     justify-content: center;
   }
-  .aux-btn:hover { opacity: 0.8; }
+  :global(html:not(.no-hover)) .aux-btn:hover { opacity: 0.8; }
   .aux-active { opacity: 1; color: var(--accent); }
   .play-btn {
     font-size: 20px;
@@ -540,7 +540,7 @@
     opacity: 0;
     transition: opacity 0.1s;
   }
-  .progress-track:hover .progress-thumb,
+  :global(html:not(.no-hover)) .progress-track:hover .progress-thumb,
   .progress-track.scrubbing .progress-thumb { opacity: 1; }
   .mute-btn {
     opacity: 0.5;
@@ -548,7 +548,7 @@
     align-items: center;
     padding: 2px;
   }
-  .mute-btn:hover { opacity: 1; }
+  :global(html:not(.no-hover)) .mute-btn:hover { opacity: 1; }
   .volume {
     width: 130px;
     appearance: none;
@@ -583,7 +583,7 @@
     margin-left: 14px;
     outline: none;
   }
-  .queue-btn:hover { opacity: 1; }
+  :global(html:not(.no-hover)) .queue-btn:hover { opacity: 1; }
   .queue-btn-active { opacity: 1; color: var(--accent); }
 
   /* Queue panel */
@@ -612,7 +612,7 @@
   }
   .queue-title { font-weight: 600; font-size: 13px; }
   .queue-header button { opacity: 0.5; font-size: 13px; }
-  .queue-header button:hover { opacity: 1; }
+  :global(html:not(.no-hover)) .queue-header button:hover { opacity: 1; }
   .queue-empty { padding: 24px 16px; color: var(--text-muted); font-size: 13px; }
   .queue-clear {
     position: absolute;
@@ -627,7 +627,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     opacity: 0.85;
   }
-  .queue-clear:hover { opacity: 1; color: var(--text); }
+  :global(html:not(.no-hover)) .queue-clear:hover { opacity: 1; color: var(--text); }
   .queue-list { overflow-y: auto; flex: 1; padding: 4px 0; }
   .queue-item {
     display: flex;
@@ -637,7 +637,7 @@
     cursor: pointer;
     position: relative;
   }
-  .queue-item:hover { background: var(--bg); }
+  :global(html:not(.no-hover)) .queue-item:hover { background: var(--bg); }
   .queue-active { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; }
   .queue-dragging { opacity: 0.4; }
   .drop-indicator {
@@ -691,6 +691,6 @@
     padding: 2px 4px;
     flex-shrink: 0;
   }
-  .queue-item:hover .queue-remove { opacity: 1; }
-  .queue-remove:hover { color: #e05; }
+  :global(html:not(.no-hover)) .queue-item:hover .queue-remove { opacity: 1; }
+  :global(html:not(.no-hover)) .queue-remove:hover { color: #e05; }
 </style>

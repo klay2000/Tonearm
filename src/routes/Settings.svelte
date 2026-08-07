@@ -1,6 +1,7 @@
 <script>
   import { themePref } from '../lib/stores/theme.js'
   import { darkStart, lightStart, liveSwitch } from '../lib/stores/themeTimes.js'
+  import { touchMode } from '../lib/stores/touchMode.js'
   import { auth, logout } from '../lib/stores/auth.js'
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
@@ -32,6 +33,11 @@
     { value: 'auto',  label: 'Auto',  desc: 'Switch at set times' },
     { value: 'light', label: 'Light', desc: 'Always light' },
     { value: 'dark',  label: 'Dark',  desc: 'Always dark' },
+  ]
+
+  const touchModeOptions = [
+    { value: true,  label: 'On',  desc: 'Drop hover highlights, which stick oddly after a tap on touchscreens' },
+    { value: false, label: 'Off', desc: 'Highlight things under the pointer as normal' },
   ]
 
   const liveSwitchOptions = [
@@ -143,6 +149,21 @@
         </div>
       </div>
     {/if}
+    <div class="field">
+      <span class="label">Touch friendly</span>
+      <div class="options">
+        {#each touchModeOptions as opt}
+          <button
+            class="option"
+            class:selected={$touchMode === opt.value}
+            onclick={() => touchMode.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
   </section>
 
   <section>
@@ -440,7 +461,7 @@
     min-width: auto;
     padding: 6px 12px;
   }
-  .option:hover { border-color: var(--accent); }
+  :global(html:not(.no-hover)) .option:hover { border-color: var(--accent); }
   .option.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .opt-label { font-weight: 600; font-size: 13px; }
   .opt-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
@@ -454,7 +475,7 @@
     font-weight: 500;
     font-size: 13px;
   }
-  .logout-btn:hover { background: color-mix(in srgb, #e05 10%, transparent); }
+  :global(html:not(.no-hover)) .logout-btn:hover { background: color-mix(in srgb, #e05 10%, transparent); }
 
   .update-controls {
     display: flex;
@@ -470,7 +491,7 @@
     font-weight: 500;
     transition: border-color 0.1s, background 0.1s;
   }
-  .update-btn:hover:not(:disabled) { border-color: var(--accent); }
+  :global(html:not(.no-hover)) .update-btn:hover:not(:disabled) { border-color: var(--accent); }
   .update-btn:disabled { opacity: 0.5; cursor: default; }
   .update-btn.primary {
     border-color: var(--accent);

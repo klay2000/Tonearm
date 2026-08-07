@@ -65,6 +65,7 @@ subsonic-client/
     │   │   ├── theme.js       # dark/light/auto theme
     │   │   ├── themeSchedule.js # pure scheduled dark/light helpers (+ themeSchedule.test.js)
     │   │   ├── themeTimes.js  # dark/light start-time + live-switch preferences (localStorage)
+    │   │   ├── touchMode.js   # touch-friendly mode: disables hover effects (localStorage)
     │   │   ├── streaming.js   # transcode bitrate preference (localStorage)
     │   │   ├── updates.js     # desktop auto-update: check GitHub releases, install (Tauri-only)
     │   │   ├── updateCheck.js # pure version-compare + asset-picking (+ updateCheck.test.js)
@@ -213,6 +214,8 @@ Collaboration artist names (`feat.`, `ft.`, `&`) are stripped to the primary art
 ```
 
 Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `prefers-color-scheme`.
+
+Every `:hover` rule is written as `:global(html:not(.no-hover)) …:hover`. Touch-friendly mode (`touchMode.js`) puts a `no-hover` class on `<html>`, switching all of them off at once — hover states are meaningless on a touchscreen and stick after a tap.
 
 In `auto` mode the theme is decided at startup from the configured start times. With **Switch while running** on (the default), `theme.js` also arms a `setTimeout` for exactly the next configured boundary — `msUntilNextSwitch()` in `themeSchedule.js` — flipping the theme and re-arming as each one passes, plus a re-check on `visibilitychange` since timers don't survive suspend. Turning the setting off leaves the startup decision standing until the app restarts.
 

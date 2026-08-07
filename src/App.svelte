@@ -9,6 +9,7 @@
   import { fullscreen } from './lib/stores/fullscreen.js'
   import { applyFullscreen } from './lib/api/fullscreen.js'
   import { maybeAutoCheck } from './lib/stores/updates.js'
+  import './lib/stores/touchMode.js' // applies the no-hover class at startup
   import Login from './routes/Login.svelte'
   import LoadingScreen from './lib/components/LoadingScreen.svelte'
   import Header from './lib/components/Header.svelte'

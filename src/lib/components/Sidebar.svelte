@@ -61,7 +61,7 @@
     border-radius: 0;
     transition: color 0.1s;
   }
-  a:hover { color: var(--text); }
+  :global(html:not(.no-hover)) a:hover { color: var(--text); }
   a.active {
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 10%, transparent);
