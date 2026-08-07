@@ -161,14 +161,30 @@ u=<username>&p=<password>&v=1.16.1&c=tonearm&f=json
 | `stream?id=` | Audio stream (`format=raw` for Original, else `maxBitRate`+`format=mp3`) |
 | `getCoverArt?id=` | Album/track artwork |
 
-**Seeking.** Only a `format=raw` stream is seekable: the server serves the file
-directly, answering range requests with `206` + `Accept-Ranges` + a real
-`Content-Length`. A transcoded stream arrives chunked with none of those, so the
-media element reports no seekable ranges. Assigning `currentTime` on one anyway
-leaves WebKitGTK (the desktop/kiosk webview) stuck in a seek that never
-completes, which takes play/pause down with it — so `canSeekTo()` in
-`playerLogic.js` gates every seek on the element's `seekable` ranges, and a seek
-on an unseekable stream is skipped rather than attempted.
+**Seeking.** Only a `format=raw` stream is seekable client-side: the server
+serves the file directly, answering range requests with `206` + `Accept-Ranges`
++ a real `Content-Length`. A transcoded stream arrives chunked with none of
+those, so the media element reports no seekable ranges, and assigning
+`currentTime` on one leaves WebKitGTK (the desktop/kiosk webview) stuck in a
+seek that never completes — taking play/pause down with it.
+
+`planSeek()` in `playerLogic.js` picks between the two routes:
+
+- **seekable** — assign `currentTime`, as usual.
+- **not seekable** — re-request the stream with `timeOffset=<target>`, which
+  Gonic honours for audio (despite the Subsonic spec describing it as
+  video-only), and shift the player's time base to match.
+
+PlayerBar therefore tracks `streamOffset`: how many seconds into the track the
+loaded stream begins. The element's own clock reads `position - streamOffset`,
+so `trackPosition()` adds the offset back for the progress bar, scrobble
+thresholds, and duration handling. `awaitingLoad` suppresses the
+store→element sync while a freshly-assigned `src` still reports a stale
+`currentTime` and an empty `seekable`, which would otherwise reload in a loop.
+
+Note the transcode is applied per **client name** (`c=tonearm`): a Gonic
+transcode profile bound to that client is what makes the default stream
+unseekable, and the same server serves any other client name raw.
 
 ---
 

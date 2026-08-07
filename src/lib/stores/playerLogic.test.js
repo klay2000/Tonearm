@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { fmt, resolveDuration, shouldSubmitScrobble, canSeekTo } from './playerLogic.js'
+import { fmt, resolveDuration, shouldSubmitScrobble, canSeekTo, planSeek } from './playerLogic.js'
 
 test('fmt formats whole minutes and seconds', () => {
   assert.equal(fmt(0), '0:00')
@@ -88,3 +88,38 @@ test('canSeekTo checks every range, not just the first', () => {
   assert.equal(canSeekTo(ranges([0, 30], [100, 200]), 150), true)
   assert.equal(canSeekTo(ranges([0, 30], [100, 200]), 60), false)
 })
+
+test('planSeek seeks the element directly when the stream is seekable', () => {
+  const plan = planSeek(ranges([0, 240]), 120)
+  assert.deepEqual(plan, { mode: 'element', time: 120, offset: 0 })
+})
+
+test('planSeek reloads at an offset when the stream is not seekable (#105)', () => {
+  // A chunked transcode reports no seekable ranges, so the only way to move is
+  // to re-request the stream at timeOffset.
+  const plan = planSeek(ranges(), 120)
+  assert.deepEqual(plan, { mode: 'reload', time: 0, offset: 120 })
+})
+
+test('planSeek accounts for a stream already loaded at an offset', () => {
+  // Stream starts 100s in and has buffered its first 60s: track position 130
+  // is element time 30, which is reachable.
+  const plan = planSeek(ranges([0, 60]), 130, 100)
+  assert.deepEqual(plan, { mode: 'element', time: 30, offset: 100 })
+})
+
+test('planSeek reloads when seeking back before the current stream starts', () => {
+  // Element time would be negative, so the offset stream can't reach it.
+  const plan = planSeek(ranges([0, 60]), 20, 100)
+  assert.deepEqual(plan, { mode: 'reload', time: 0, offset: 20 })
+})
+
+test('planSeek floors the reload offset to whole seconds', () => {
+  // timeOffset is an integer parameter on the stream endpoint.
+  assert.equal(planSeek(ranges(), 120.7).offset, 120)
+})
+
+test('planSeek clamps a negative target to the start', () => {
+  assert.deepEqual(planSeek(ranges(), -5), { mode: 'reload', time: 0, offset: 0 })
+})
+
