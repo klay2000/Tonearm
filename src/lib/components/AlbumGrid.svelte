@@ -52,7 +52,7 @@
     border-radius: 6px;
     transition: opacity 0.15s;
   }
-  .album-card:hover :global(.cover-art) { opacity: 0.85; }
+  :global(html:not(.no-hover)) .album-card:hover :global(.cover-art) { opacity: 0.85; }
   .title {
     font-size: 13px;
     font-weight: 500;
@@ -77,7 +77,7 @@
     padding: 6px 12px;
     border-radius: 6px;
   }
-  .album-row:hover { background: var(--surface); }
+  :global(html:not(.no-hover)) .album-row:hover { background: var(--surface); }
   .album-row :global(.cover-art) { width: 48px; height: 48px; padding-top: 0; border-radius: 4px; }
   .row-text { display: flex; flex-direction: column; }
   .row-title { font-weight: 500; }

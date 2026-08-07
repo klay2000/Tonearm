@@ -72,5 +72,5 @@
     padding: 4px;
     opacity: 0.7;
   }
-  .theme-btn:hover { opacity: 1; }
+  :global(html:not(.no-hover)) .theme-btn:hover { opacity: 1; }
 </style>

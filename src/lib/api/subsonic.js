@@ -130,9 +130,17 @@ export async function scrobble(id, { submission, time } = {}) {
   }
 }
 
-export function streamUrl(id) {
+// `timeOffset` (seconds) asks the server to start the stream partway into the
+// track. It's how seeking works on a transcoded stream, which is delivered
+// chunked and can't be seeked client-side.
+export function streamUrl(id, timeOffset = 0) {
   const bitrate = get(transcodeBitrate)
-  const params = bitrate > 0 ? { id, maxBitRate: bitrate, format: 'mp3' } : { id }
+  // "Original" asks for format=raw explicitly. Without it the server applies
+  // its own transcode profile and sends the result chunked, with no
+  // Content-Length or Accept-Ranges — which makes the stream unseekable, so
+  // scrubbing can't work and every network hiccup reaches the decoder.
+  const params = bitrate > 0 ? { id, maxBitRate: bitrate, format: 'mp3' } : { id, format: 'raw' }
+  if (timeOffset > 0) params.timeOffset = Math.floor(timeOffset)
   return buildUrl('stream', params).toString()
 }
 

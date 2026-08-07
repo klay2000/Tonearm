@@ -93,7 +93,7 @@
     border-radius: 6px;
     display: block;
   }
-  .row:hover { background: var(--surface); }
+  :global(html:not(.no-hover)) .row:hover { background: var(--surface); }
 
   .section-header {
     display: flex;
@@ -118,7 +118,7 @@
     padding: 8px 12px;
     border-radius: 6px;
   }
-  .song-main:hover { background: var(--surface); }
+  :global(html:not(.no-hover)) .song-main:hover { background: var(--surface); }
   .song-title { font-weight: 500; }
   .song-sub { font-size: 12px; color: var(--text-muted); }
   .song-actions {
@@ -127,12 +127,12 @@
     padding-right: 8px;
     opacity: 0;
   }
-  .song-row:hover .song-actions { opacity: 1; }
+  :global(html:not(.no-hover)) .song-row:hover .song-actions { opacity: 1; }
   .song-actions button {
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 13px;
     color: var(--text-muted);
   }
-  .song-actions button:hover { color: var(--accent); }
+  :global(html:not(.no-hover)) .song-actions button:hover { color: var(--accent); }
 </style>

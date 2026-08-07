@@ -54,7 +54,7 @@
     background: var(--surface);
     color: var(--accent);
   }
-  .view-toggle button:hover:not(.active) {
+  :global(html:not(.no-hover)) .view-toggle button:hover:not(.active) {
     color: var(--text);
   }
 </style>
