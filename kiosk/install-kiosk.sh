@@ -10,10 +10,12 @@
 # Usage:
 #   ./install-kiosk.sh                  # install / update to the latest release
 #   ./install-kiosk.sh --appimage PATH  # install a local AppImage (offline/testing)
+#   ./install-kiosk.sh --fix-wifi       # also turn off wifi power save (needs sudo)
 #   ./install-kiosk.sh --uninstall
 #
 # No root required: everything is installed under the current user's home and
-# runs as a systemd --user service.
+# runs as a systemd --user service. The one exception is --fix-wifi, which
+# writes a NetworkManager drop-in and so asks for sudo.
 
 set -euo pipefail
 
@@ -25,6 +27,8 @@ SERVICE_DIR="$HOME/.config/systemd/user"
 SERVICE_PATH="$SERVICE_DIR/$SERVICE_NAME"
 
 local_appimage=""
+fix_wifi=0
+NM_CONF="/etc/NetworkManager/conf.d/wifi-powersave-off.conf"
 
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mwarning:\033[0m %s\n' "$*" >&2; }
@@ -40,9 +44,41 @@ uninstall() {
   exit 0
 }
 
+# Wifi power save parks the radio between beacons. The latency spikes that
+# causes starve the audio buffer, which comes out of the speakers as crackle —
+# so a kiosk streaming over wifi wants it off.
+wifi_powersave_on() {
+  command -v iw >/dev/null || return 1
+  for dev in /sys/class/net/*/wireless; do
+    [ -e "$dev" ] || continue
+    name="$(basename "$(dirname "$dev")")"
+    # `iw get power_save` prints nothing unprivileged, so fall back to a
+    # passwordless sudo if one is available. If neither answers we just skip
+    # the warning rather than nagging.
+    state="$(iw dev "$name" get power_save 2>/dev/null)"
+    [ -n "$state" ] || state="$(sudo -n iw dev "$name" get power_save 2>/dev/null || true)"
+    printf '%s' "$state" | grep -qi "power save: on" && return 0
+  done
+  return 1
+}
+
+disable_wifi_powersave() {
+  log "Turning off wifi power save"
+  sudo mkdir -p "$(dirname "$NM_CONF")"
+  printf '[connection]\n# Wifi power save causes latency spikes that make kiosk audio crackle.\n# 2 = disable.\nwifi.powersave = 2\n' \
+    | sudo tee "$NM_CONF" > /dev/null
+  # Apply now too, so it takes effect without a reconnect.
+  for dev in /sys/class/net/*/wireless; do
+    [ -e "$dev" ] || continue
+    sudo iw dev "$(basename "$(dirname "$dev")")" set power_save off 2>/dev/null || true
+  done
+  log "Wifi power save off (persisted in $NM_CONF)"
+}
+
 case "${1:-}" in
-  --uninstall) uninstall ;;
-  --appimage)  local_appimage="${2:-}"; [ -n "$local_appimage" ] || die "--appimage needs a path" ;;
+  --uninstall)  uninstall ;;
+  --appimage)   local_appimage="${2:-}"; [ -n "$local_appimage" ] || die "--appimage needs a path" ;;
+  --fix-wifi)   fix_wifi=1 ;;
   "") ;;
   *) die "unknown option: $1" ;;
 esac
@@ -132,6 +168,15 @@ EOF
 systemctl --user daemon-reload
 systemctl --user enable "$SERVICE_NAME"
 log "Service enabled. It will start Tonearm on the next graphical login."
+
+if [ "$fix_wifi" -eq 1 ]; then
+  disable_wifi_powersave
+elif wifi_powersave_on; then
+  warn "wifi power save is on, which can make playback crackle on this device."
+  warn "Re-run with --fix-wifi to turn it off, or do it by hand:"
+  warn "    sudo iw dev wlan0 set power_save off   # now"
+  warn "    echo -e '[connection]\\nwifi.powersave = 2' | sudo tee $NM_CONF   # persist"
+fi
 
 cat <<'NOTE'
 

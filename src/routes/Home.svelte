@@ -149,7 +149,7 @@
   .play-lib { background: var(--accent); color: white; }
   .play-lib:disabled { opacity: 0.6; cursor: default; }
   .shuffle-lib { border: 1px solid var(--border); color: var(--text); }
-  .shuffle-lib:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  :global(html:not(.no-hover)) .shuffle-lib:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   .shuffle-lib:disabled { opacity: 0.6; cursor: default; }
 
   section { margin-bottom: 36px; }
@@ -165,5 +165,5 @@
 
   .hint { color: var(--text-muted); }
   .hint a { color: var(--accent); }
-  .hint a:hover { text-decoration: underline; }
+  :global(html:not(.no-hover)) .hint a:hover { text-decoration: underline; }
 </style>

@@ -137,7 +137,7 @@
   .play-all { background: var(--accent); color: white; }
   .play-all:disabled { opacity: 0.6; cursor: default; }
   .shuffle-all { border: 1px solid var(--border); color: var(--text); }
-  .shuffle-all:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  :global(html:not(.no-hover)) .shuffle-all:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   .shuffle-all:disabled { opacity: 0.6; cursor: default; }
   .section-header {
     display: flex;

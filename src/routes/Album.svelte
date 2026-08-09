@@ -112,7 +112,7 @@
   }
   h1 { font-size: 26px; font-weight: 700; }
   .artist-link { color: var(--accent); font-weight: 500; }
-  .artist-link:hover { text-decoration: underline; }
+  :global(html:not(.no-hover)) .artist-link:hover { text-decoration: underline; }
   .sub { color: var(--text-muted); font-size: 13px; }
   .header-actions { display: flex; gap: 8px; margin-top: 8px; }
   .play-all, .enqueue-all {
@@ -123,14 +123,14 @@
   }
   .play-all { background: var(--accent); color: white; }
   .enqueue-all { border: 1px solid var(--border); color: var(--text); }
-  .enqueue-all:hover { border-color: var(--accent); color: var(--accent); }
+  :global(html:not(.no-hover)) .enqueue-all:hover { border-color: var(--accent); color: var(--accent); }
 
   .track-list {
     width: 100%;
     border-collapse: collapse;
   }
   tr { cursor: pointer; }
-  tr:hover td { background: var(--surface); }
+  :global(html:not(.no-hover)) tr:hover td { background: var(--surface); }
   tr.active td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
   td { padding: 8px 12px; }
   td:first-child { border-radius: 6px 0 0 6px; }
@@ -151,12 +151,12 @@
     opacity: 0;
     width: 60px;
   }
-  tr:hover .actions { opacity: 1; }
+  :global(html:not(.no-hover)) tr:hover .actions { opacity: 1; }
   .actions button {
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 13px;
     color: var(--text-muted);
   }
-  .actions button:hover { color: var(--accent); }
+  :global(html:not(.no-hover)) .actions button:hover { color: var(--accent); }
 </style>
