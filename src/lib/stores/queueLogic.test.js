@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove } from './queueLogic.js'
+import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove, randomOtherIndex, shuffledAroundCurrent } from './queueLogic.js'
 
 test('linearNextIndex advances within the queue', () => {
   assert.equal(linearNextIndex(0, 3, 'off'), 1)
@@ -55,4 +55,21 @@ test('indexAfterRemove: removing the playing track clamps to the new last index'
   assert.equal(indexAfterRemove(2, 2, 2), 1)
   // queue emptied entirely
   assert.equal(indexAfterRemove(0, 0, 0), -1)
+})
+
+// Feeds a fixed sequence of Math.random-style values.
+const sequence = values => () => values.shift()
+
+test('randomOtherIndex never picks the current track', () => {
+  // first roll lands on the current index (1) and must be re-rolled
+  assert.equal(randomOtherIndex(1, 3, sequence([0.4, 0.9])), 2)
+  assert.equal(randomOtherIndex(1, 3, sequence([0.1])), 0)
+})
+
+test('shuffledAroundCurrent puts the playing track first and keeps every track', () => {
+  const q = ['a', 'b', 'c', 'd', 'e']
+  const out = shuffledAroundCurrent(q, 2)
+  assert.equal(out[0], 'c')
+  assert.deepEqual([...out].sort(), [...q].sort())
+  assert.deepEqual(q, ['a', 'b', 'c', 'd', 'e'], 'input queue is not mutated')
 })

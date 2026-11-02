@@ -30,3 +30,22 @@ export function indexAfterRemove(current, removed, newLength) {
   if (removed === current) return Math.min(current, newLength - 1)
   return current
 }
+
+// Shuffle mode 'random': a random index other than the current one. Needs at
+// least two tracks. `random` is injectable so tests can make it deterministic.
+export function randomOtherIndex(current, length, random = Math.random) {
+  let next
+  do { next = Math.floor(random() * length) } while (next === current)
+  return next
+}
+
+// Shuffle mode 'reorder': the queue with the playing track moved to the front
+// and everything else Fisher–Yates shuffled behind it.
+export function shuffledAroundCurrent(queue, current, random = Math.random) {
+  const rest = queue.filter((_, n) => n !== current)
+  for (let j = rest.length - 1; j > 0; j--) {
+    const k = Math.floor(random() * (j + 1))
+    ;[rest[j], rest[k]] = [rest[k], rest[j]]
+  }
+  return [queue[current], ...rest]
+}

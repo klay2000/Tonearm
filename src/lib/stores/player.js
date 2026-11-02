@@ -1,6 +1,7 @@
 import { writable, derived, get } from 'svelte/store'
 import { auth } from './auth.js'
-import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove } from './queueLogic.js'
+import { persisted } from './persisted.js'
+import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove, randomOtherIndex, shuffledAroundCurrent } from './queueLogic.js'
 
 export const queue = writable([])
 export const queueIndex = writable(-1)
@@ -12,13 +13,11 @@ export const shuffle = writable(false)
 export const repeat = writable('off') // 'off' | 'all' | 'one'
 // 'random': pick a random next track each time
 // 'reorder': physically shuffle the queue when shuffle is toggled on
-export const shuffleMode = writable(localStorage.getItem('subsonic_shuffle_mode') ?? 'random')
-shuffleMode.subscribe(v => localStorage.setItem('subsonic_shuffle_mode', v))
+export const shuffleMode = persisted('subsonic_shuffle_mode', 'random')
 
 // Apply per-track ReplayGain (from the Subsonic API) to even out volume
 // differences between tracks from different sources.
-export const normalizeVolume = writable(localStorage.getItem('subsonic_normalize_volume') === 'true')
-normalizeVolume.subscribe(v => localStorage.setItem('subsonic_normalize_volume', String(v)))
+export const normalizeVolume = persisted('subsonic_normalize_volume', false)
 
 export const currentTrack = derived(
   [queue, queueIndex],
@@ -30,15 +29,7 @@ export function toggleShuffle() {
   shuffle.set(next)
   if (next && get(shuffleMode) === 'reorder') {
     const i = get(queueIndex)
-    queue.update(q => {
-      const current = q[i]
-      const rest = q.filter((_, n) => n !== i)
-      for (let j = rest.length - 1; j > 0; j--) {
-        const k = Math.floor(Math.random() * (j + 1))
-        ;[rest[j], rest[k]] = [rest[k], rest[j]]
-      }
-      return [current, ...rest]
-    })
+    queue.update(q => shuffledAroundCurrent(q, i))
     queueIndex.set(0)
   }
 }
@@ -59,9 +50,7 @@ export function playNext() {
   const s = get(shuffle)
   const r = get(repeat)
   if (s && get(shuffleMode) === 'random' && q.length > 1) {
-    let next
-    do { next = Math.floor(Math.random() * q.length) } while (next === i)
-    queueIndex.set(next)
+    queueIndex.set(randomOtherIndex(i, q.length))
   } else {
     queueIndex.set(linearNextIndex(i, q.length, r))
   }

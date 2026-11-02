@@ -1,12 +1,10 @@
 import { writable, get } from 'svelte/store'
+import { persisted } from './persisted.js'
 import { isDarkAt, msUntilNextSwitch } from './themeSchedule.js'
 import { darkStart, lightStart, liveSwitch } from './themeTimes.js'
 
-const KEY = 'subsonic_theme'
-
 // 'auto' | 'light' | 'dark'
-export const themePref = writable(localStorage.getItem(KEY) ?? 'auto')
-themePref.subscribe(v => localStorage.setItem(KEY, v))
+export const themePref = persisted('subsonic_theme', 'auto')
 
 export const isDark = writable(false)
 

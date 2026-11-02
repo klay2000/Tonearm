@@ -1,4 +1,5 @@
 import { writable, derived, get } from 'svelte/store'
+import { persisted } from './persisted.js'
 import { isTauri } from '../api/albumArtWindow.js'
 import { evaluateRelease } from './updateCheck.js'
 
@@ -7,8 +8,7 @@ const RELEASES_API = 'https://api.github.com/repos/klay2000/Tonearm/releases/lat
 
 // Whether to check for updates automatically on startup. Persisted, on by
 // default.
-export const autoCheckUpdates = writable(localStorage.getItem('subsonic_auto_update') !== 'false')
-autoCheckUpdates.subscribe(v => localStorage.setItem('subsonic_auto_update', String(v)))
+export const autoCheckUpdates = persisted('subsonic_auto_update', true)
 
 // Updater state machine:
 //   status: 'idle' | 'checking' | 'available' | 'uptodate' | 'noarch'
