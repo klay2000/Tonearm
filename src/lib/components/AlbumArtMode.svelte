@@ -108,7 +108,7 @@
        (which is the drag region); only the controls themselves are interactive. */
     pointer-events: none;
   }
-  .album-art-mode:hover .overlay,
+  :global(html:not(.no-hover)) .album-art-mode:hover .overlay,
   .overlay.visible {
     opacity: 1;
   }
@@ -122,7 +122,7 @@
     padding: clamp(4px, 1.5vmin, 6px);
     pointer-events: auto;
   }
-  .close-btn:hover { opacity: 1; }
+  :global(html:not(.no-hover)) .close-btn:hover { opacity: 1; }
   .close-btn svg {
     width: clamp(14px, 5vmin, 16px);
     height: clamp(14px, 5vmin, 16px);
@@ -142,7 +142,7 @@
     align-items: center;
     justify-content: center;
   }
-  .controls button:hover { opacity: 1; }
+  :global(html:not(.no-hover)) .controls button:hover { opacity: 1; }
   .controls button svg {
     width: clamp(18px, 8vmin, 22px);
     height: clamp(18px, 8vmin, 22px);

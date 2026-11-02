@@ -23,9 +23,26 @@ bash install-kiosk.sh --appimage ./Tonearm_x.y.z_aarch64.AppImage
 - Downloads the arch-matching `.AppImage` from the latest GitHub release into
   `~/.local/share/tonearm/` (or installs the one given via `--appimage`).
 - Writes `~/.config/systemd/user/tonearm-kiosk.service` and enables it.
+- Warns if wifi power save is on (see below).
 - Re-running updates the AppImage in place. `--uninstall` removes everything.
 
 Nothing needs root — it installs under `$HOME` and runs as `systemctl --user`.
+The one exception is `--fix-wifi`, which uses sudo.
+
+## Wifi power save and crackling audio
+
+On a device streaming over wifi, wifi power save parks the radio between
+beacons. The resulting latency spikes starve the audio buffer, which comes out
+of the speakers as intermittent crackle — even on a strong signal. The
+installer warns when it detects this; `--fix-wifi` turns it off:
+
+```bash
+bash install-kiosk.sh --fix-wifi
+```
+
+That writes `/etc/NetworkManager/conf.d/wifi-powersave-off.conf`
+(`wifi.powersave = 2`) so it persists across reboots, and applies it
+immediately with `iw` so there's no need to reconnect.
 
 ## How the service starts the app
 
@@ -42,9 +59,9 @@ service → Tonearm launches.
 
 - **systemd** and a **graphical desktop session the device auto-logs into**
   (e.g. Raspberry Pi OS "Desktop Autologin"). The single kiosk seat is `:0`.
-- A release contains an AppImage for the device's architecture. The main
-  release pipeline builds **x86_64**; the **aarch64** build for 64-bit
-  Raspberry Pi devices is added in #99.
+- A release contains an AppImage for the device's architecture. The release
+  pipeline builds both **x86_64** and **aarch64**, so 64-bit Raspberry Pi
+  devices are covered.
 
 ## Fullscreen
 

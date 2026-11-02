@@ -106,7 +106,7 @@
     font-size: 12px;
     font-weight: 600;
   }
-  .jump-bar a:hover { color: var(--accent); border-color: var(--accent); }
+  :global(html:not(.no-hover)) .jump-bar a:hover { color: var(--accent); border-color: var(--accent); }
 
   section { margin-bottom: 32px; }
   .index-label {
@@ -125,7 +125,7 @@
     padding: 8px 12px;
     border-radius: 6px;
   }
-  .artist-row:hover { background: var(--surface); }
+  :global(html:not(.no-hover)) .artist-row:hover { background: var(--surface); }
   .name { font-weight: 500; }
   .count { font-size: 12px; color: var(--text-muted); }
 
@@ -143,7 +143,7 @@
     padding: 8px;
     border-radius: 8px;
   }
-  .artist-card:hover { background: var(--surface); }
+  :global(html:not(.no-hover)) .artist-card:hover { background: var(--surface); }
   .artist-card .name {
     font-size: 13px;
     white-space: nowrap;

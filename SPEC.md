@@ -64,7 +64,10 @@ subsonic-client/
     │   │   ├── hashRoute.js   # pure #hash parsing (+ hashRoute.test.js)
     │   │   ├── theme.js       # dark/light/auto theme
     │   │   ├── themeSchedule.js # pure scheduled dark/light helpers (+ themeSchedule.test.js)
-    │   │   ├── themeTimes.js  # dark/light start-time preferences (localStorage)
+    │   │   ├── themeTimes.js  # dark/light start-time + live-switch preferences (localStorage)
+    │   │   ├── touchMode.js   # touch-friendly mode: disables hover effects (localStorage)
+    │   │   ├── uiScale.js     # kiosk interface scale, applied as CSS zoom (localStorage)
+    │   │   ├── uiScaleLogic.js # pure scale clamping/snapping (+ uiScaleLogic.test.js)
     │   │   ├── streaming.js   # transcode bitrate preference (localStorage)
     │   │   ├── updates.js     # desktop auto-update: check GitHub releases, install (Tauri-only)
     │   │   ├── updateCheck.js # pure version-compare + asset-picking (+ updateCheck.test.js)
@@ -155,8 +158,33 @@ u=<username>&p=<password>&v=1.16.1&c=tonearm&f=json
 | `getAlbum?id=` | Tracks for a specific album |
 | `getAlbumList2?type=` | `newest` / `random` for home page shelves |
 | `search3?query=` | Unified search |
-| `stream?id=` | Audio stream |
+| `stream?id=` | Audio stream (`format=raw` for Original, else `maxBitRate`+`format=mp3`) |
 | `getCoverArt?id=` | Album/track artwork |
+
+**Seeking.** Only a `format=raw` stream is seekable client-side: the server
+serves the file directly, answering range requests with `206` + `Accept-Ranges`
++ a real `Content-Length`. A transcoded stream arrives chunked with none of
+those, so the media element reports no seekable ranges, and assigning
+`currentTime` on one leaves WebKitGTK (the desktop/kiosk webview) stuck in a
+seek that never completes — taking play/pause down with it.
+
+`planSeek()` in `playerLogic.js` picks between the two routes:
+
+- **seekable** — assign `currentTime`, as usual.
+- **not seekable** — re-request the stream with `timeOffset=<target>`, which
+  Gonic honours for audio (despite the Subsonic spec describing it as
+  video-only), and shift the player's time base to match.
+
+PlayerBar therefore tracks `streamOffset`: how many seconds into the track the
+loaded stream begins. The element's own clock reads `position - streamOffset`,
+so `trackPosition()` adds the offset back for the progress bar, scrobble
+thresholds, and duration handling. `awaitingLoad` suppresses the
+store→element sync while a freshly-assigned `src` still reports a stale
+`currentTime` and an empty `seekable`, which would otherwise reload in a loop.
+
+Note the transcode is applied per **client name** (`c=tonearm`): a Gonic
+transcode profile bound to that client is what makes the default stream
+unseekable, and the same server serves any other client name raw.
 
 ---
 
@@ -214,6 +242,10 @@ Collaboration artist names (`feat.`, `ft.`, `&`) are stripped to the primary art
 
 Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `prefers-color-scheme`.
 
+Every `:hover` rule is written as `:global(html:not(.no-hover)) …:hover`. Touch-friendly mode (`touchMode.js`) puts a `no-hover` class on `<html>`, switching all of them off at once — hover states are meaningless on a touchscreen and stick after a tap.
+
+In `auto` mode the theme is decided at startup from the configured start times. With **Switch while running** on (the default), `theme.js` also arms a `setTimeout` for exactly the next configured boundary — `msUntilNextSwitch()` in `themeSchedule.js` — flipping the theme and re-arming as each one passes, plus a re-check on `visibilitychange` since timers don't survive suspend. Turning the setting off leaves the startup decision standing until the app restarts.
+
 ---
 
 ## Implemented
@@ -226,13 +258,13 @@ Theme class (`.dark` / `.light`) toggled on `<html>` element; also respects `pre
 - [x] Queue: view, reorder (drag), remove, clear, click-to-play, play next / add to queue
 - [x] Shuffle: random-next mode or reorder-queue mode (configurable in Settings)
 - [x] Volume normalization: attenuates loud tracks by scaling the `<audio>` element's volume using per-track ReplayGain (configurable in Settings, off by default — requires ReplayGain tags in your library, e.g. from `rsgain`). Can only turn loud tracks down, not boost quiet ones (volume is capped at 1) — avoids routing through Web Audio, which silences cross-origin streams.
-- [x] Streaming quality: configurable in Settings (Original / 320 / 192 / 128 kbps). Non-original options request server-side transcoding to MP3 via `maxBitRate`/`format` on the Subsonic `stream` endpoint, to save bandwidth.
+- [x] Streaming quality: configurable in Settings (Original / 320 / 192 / 128 kbps). Non-original options request server-side transcoding to MP3 via `maxBitRate`/`format` on the Subsonic `stream` endpoint, to save bandwidth. **Original sends `format=raw`** — without it the server applies its own transcode profile and streams the result chunked, with no `Content-Length` or `Accept-Ranges`, which makes the stream unseekable.
 - [x] Repeat: off / repeat-all / repeat-one
 - [x] Play artist / shuffle artist: fetches all albums in parallel and queues tracks
 - [x] Play / shuffle entire library
 - [x] Album art scraping: TheAudioDB → MusicBrainz → Cover Art Archive fallback
 - [x] Artist avatars: lazy-loaded with TheAudioDB/Wikidata/initials fallback
-- [x] Dark/light mode toggle + auto theme by user-configured start times (Settings)
+- [x] Dark/light mode toggle + auto theme by user-configured start times (Settings), switching live while the app is open (optional)
 - [x] Login screen with server URL + credentials
 - [x] Player state (queue, volume, shuffle, repeat) persisted per account in localStorage
 - [x] Settings screen: theme preference, shuffle mode, volume normalization, streaming quality, build info (branch + commit)

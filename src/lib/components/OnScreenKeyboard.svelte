@@ -175,7 +175,7 @@
     line-height: 1;
     transition: background 0.08s, border-color 0.08s;
   }
-  .key:hover { border-color: var(--accent); }
+  :global(html:not(.no-hover)) .key:hover { border-color: var(--accent); }
   .key:active { background: color-mix(in srgb, var(--accent) 18%, transparent); }
   .key.wide { flex-grow: 1.5; max-width: 110px; }
   .key.space { flex-grow: 5; max-width: none; }

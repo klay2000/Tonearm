@@ -1,6 +1,6 @@
 import { writable, get } from 'svelte/store'
-import { isDarkAt } from './themeSchedule.js'
-import { darkStart, lightStart } from './themeTimes.js'
+import { isDarkAt, msUntilNextSwitch } from './themeSchedule.js'
+import { darkStart, lightStart, liveSwitch } from './themeTimes.js'
 
 const KEY = 'subsonic_theme'
 
@@ -25,9 +25,41 @@ export function applyTheme(pref) {
   setDark(isDarkAt(new Date(), get(darkStart), get(lightStart)))
 }
 
-// Apply on pref change, on time-setting change, and re-check hourly so the
-// theme flips automatically when crossing a configured time.
-themePref.subscribe(pref => applyTheme(pref))
-darkStart.subscribe(() => applyTheme(get(themePref)))
-lightStart.subscribe(() => applyTheme(get(themePref)))
-setInterval(() => applyTheme(get(themePref)), 3_600_000)
+// While the app is open, sleep exactly until the next configured transition
+// and flip then — rather than polling. Only runs in 'auto' mode with the
+// live-switch setting on; otherwise the startup decision simply stands.
+let timer = null
+
+function reschedule() {
+  clearTimeout(timer)
+  timer = null
+
+  if (get(themePref) !== 'auto' || !get(liveSwitch)) return
+
+  const ms = msUntilNextSwitch(new Date(), get(darkStart), get(lightStart))
+  if (ms == null) return
+
+  timer = setTimeout(() => {
+    applyTheme(get(themePref))
+    reschedule()
+  }, ms)
+}
+
+// Re-apply and re-arm on any change to the settings that feed the schedule.
+// Changing a time is a deliberate user action, so it takes effect immediately
+// even when live switching is off.
+for (const store of [themePref, darkStart, lightStart, liveSwitch]) {
+  store.subscribe(() => {
+    applyTheme(get(themePref))
+    reschedule()
+  })
+}
+
+// Timers are unreliable across sleep/suspend, so re-check when the window
+// comes back into view.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return
+  if (get(themePref) !== 'auto' || !get(liveSwitch)) return
+  applyTheme('auto')
+  reschedule()
+})

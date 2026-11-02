@@ -30,3 +30,27 @@ export function isDarkAt(now, darkStart, lightStart) {
   // Dark period wraps past midnight, e.g. 20:00 -> 07:00 (next day)
   return nowMin >= darkMin || nowMin < lightMin
 }
+
+// Milliseconds from `now` until the next dark/light transition, so a running
+// app can sleep exactly until the theme needs to flip instead of polling.
+// Returns null when the two times are equal (no transition ever happens).
+export function msUntilNextSwitch(now, darkStart, lightStart) {
+  const darkMin = timeToMinutes(darkStart)
+  const lightMin = timeToMinutes(lightStart)
+
+  if (darkMin === lightMin) return null
+
+  const DAY = 24 * 60 * 60 * 1000
+  const nowMs =
+    now.getHours() * 3_600_000 +
+    now.getMinutes() * 60_000 +
+    now.getSeconds() * 1_000 +
+    now.getMilliseconds()
+
+  // Next boundary strictly after now, wrapping to tomorrow if both have passed.
+  return Math.min(
+    ...[darkMin, lightMin]
+      .map(min => min * 60_000)
+      .map(ms => (ms > nowMs ? ms - nowMs : ms + DAY - nowMs))
+  )
+}

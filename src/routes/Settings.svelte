@@ -1,6 +1,9 @@
 <script>
   import { themePref } from '../lib/stores/theme.js'
-  import { darkStart, lightStart } from '../lib/stores/themeTimes.js'
+  import { darkStart, lightStart, liveSwitch } from '../lib/stores/themeTimes.js'
+  import { touchMode } from '../lib/stores/touchMode.js'
+  import { uiScale } from '../lib/stores/uiScale.js'
+  import { clampScale, formatScale, MIN_SCALE, MAX_SCALE, SCALE_STEP, SCALE_MARKERS } from '../lib/stores/uiScaleLogic.js'
   import { auth, logout } from '../lib/stores/auth.js'
   import { shuffleMode, normalizeVolume } from '../lib/stores/player.js'
   import { greetingMode } from '../lib/stores/greeting.js'
@@ -32,6 +35,16 @@
     { value: 'auto',  label: 'Auto',  desc: 'Switch at set times' },
     { value: 'light', label: 'Light', desc: 'Always light' },
     { value: 'dark',  label: 'Dark',  desc: 'Always dark' },
+  ]
+
+  const touchModeOptions = [
+    { value: true,  label: 'On',  desc: 'Drop hover highlights, which stick oddly after a tap on touchscreens' },
+    { value: false, label: 'Off', desc: 'Highlight things under the pointer as normal' },
+  ]
+
+  const liveSwitchOptions = [
+    { value: true,  label: 'On',  desc: 'Change theme as soon as a set time passes, even while the app is open' },
+    { value: false, label: 'Off', desc: 'Only pick the theme when the app starts' },
   ]
 
   const greetingModeOptions = [
@@ -122,7 +135,37 @@
           onchange={(e) => lightStart.set(e.target.value)}
         />
       </div>
+      <div class="field">
+        <span class="label">Switch while running</span>
+        <div class="options">
+          {#each liveSwitchOptions as opt}
+            <button
+              class="option"
+              class:selected={$liveSwitch === opt.value}
+              onclick={() => liveSwitch.set(opt.value)}
+            >
+              <span class="opt-label">{opt.label}</span>
+              <span class="opt-desc">{opt.desc}</span>
+            </button>
+          {/each}
+        </div>
+      </div>
     {/if}
+    <div class="field">
+      <span class="label">Touch friendly</span>
+      <div class="options">
+        {#each touchModeOptions as opt}
+          <button
+            class="option"
+            class:selected={$touchMode === opt.value}
+            onclick={() => touchMode.set(opt.value)}
+          >
+            <span class="opt-label">{opt.label}</span>
+            <span class="opt-desc">{opt.desc}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
   </section>
 
   <section>
@@ -245,6 +288,37 @@
 
   <section>
     <h2>Kiosk</h2>
+    <div class="field">
+      <span class="label">Interface scale</span>
+      <div class="scale-control">
+        <div class="scale-row">
+          <input
+            class="scale-slider"
+            type="range"
+            min={MIN_SCALE}
+            max={MAX_SCALE}
+            step={SCALE_STEP}
+            list="scale-markers"
+            value={$uiScale}
+            oninput={(e) => uiScale.set(clampScale(e.target.value))}
+          />
+          <span class="scale-value mono">{formatScale($uiScale)}</span>
+        </div>
+        <datalist id="scale-markers">
+          {#each SCALE_MARKERS as m}<option value={m}></option>{/each}
+        </datalist>
+        <div class="scale-ticks">
+          {#each SCALE_MARKERS as m}
+            <button
+              class="scale-tick"
+              style="left: calc(7px + {((m - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100}% - {((m - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 14}px)"
+              onclick={() => uiScale.set(m)}
+            >{formatScale(m)}</button>
+          {/each}
+        </div>
+        <span class="opt-desc">Sizes up the whole interface for a kiosk screen you view from a distance.</span>
+      </div>
+    </div>
     <div class="field">
       <span class="label">Fullscreen</span>
       <div class="options">
@@ -404,6 +478,51 @@
   }
   .time-input:focus { border-color: var(--accent); outline: none; }
 
+  .scale-control { display: flex; flex-direction: column; gap: 6px; max-width: 320px; }
+  .scale-row { display: flex; align-items: center; gap: 12px; }
+  .scale-value { min-width: 34px; }
+  .scale-slider {
+    flex: 1;
+    appearance: none;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .scale-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid var(--surface);
+    cursor: pointer;
+  }
+  .scale-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid var(--surface);
+    cursor: pointer;
+  }
+  /* Markers sit under the track, aligned to their value; clicking one snaps. */
+  .scale-ticks { position: relative; height: 16px; margin-right: 46px; }
+  .scale-tick {
+    position: absolute;
+    transform: translateX(-50%);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    font-family: monospace;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  :global(html:not(.no-hover)) .scale-tick:hover { color: var(--accent); }
+
   .options { display: flex; gap: 8px; flex-wrap: wrap; }
   .option {
     display: flex;
@@ -420,7 +539,7 @@
     min-width: auto;
     padding: 6px 12px;
   }
-  .option:hover { border-color: var(--accent); }
+  :global(html:not(.no-hover)) .option:hover { border-color: var(--accent); }
   .option.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
   .opt-label { font-weight: 600; font-size: 13px; }
   .opt-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
@@ -434,7 +553,7 @@
     font-weight: 500;
     font-size: 13px;
   }
-  .logout-btn:hover { background: color-mix(in srgb, #e05 10%, transparent); }
+  :global(html:not(.no-hover)) .logout-btn:hover { background: color-mix(in srgb, #e05 10%, transparent); }
 
   .update-controls {
     display: flex;
@@ -450,7 +569,7 @@
     font-weight: 500;
     transition: border-color 0.1s, background 0.1s;
   }
-  .update-btn:hover:not(:disabled) { border-color: var(--accent); }
+  :global(html:not(.no-hover)) .update-btn:hover:not(:disabled) { border-color: var(--accent); }
   .update-btn:disabled { opacity: 0.5; cursor: default; }
   .update-btn.primary {
     border-color: var(--accent);
