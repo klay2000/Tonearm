@@ -49,3 +49,12 @@ export function shuffledAroundCurrent(queue, current, random = Math.random) {
   }
   return [queue[current], ...rest]
 }
+
+// Queue entries are tagged with their own `queueKey`, separate from the song
+// id, because the same song can be in the queue more than once. Anything that
+// needs to tell entries apart (the queue list's keyed #each, PlayerBar's "has
+// the track changed?" check) uses the key; the song id is only for the server.
+// Returns tagged copies numbered from `firstKey`; the inputs aren't modified.
+export function tagEntries(tracks, firstKey) {
+  return tracks.map((track, n) => ({ ...track, queueKey: firstKey + n }))
+}

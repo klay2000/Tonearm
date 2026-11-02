@@ -48,7 +48,7 @@
     <p class="queue-empty">There's nothing here.</p>
   {:else}
   <div class="queue-list">
-    {#each $queue as track, i (track.id)}
+    {#each $queue as track, i (track.queueKey)}
       <div
         class="queue-item"
         class:queue-active={i === $queueIndex}

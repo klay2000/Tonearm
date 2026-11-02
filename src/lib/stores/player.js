@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store'
 import { auth } from './auth.js'
 import { persisted } from './persisted.js'
-import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove, randomOtherIndex, shuffledAroundCurrent } from './queueLogic.js'
+import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove, randomOtherIndex, shuffledAroundCurrent, tagEntries } from './queueLogic.js'
 
 export const queue = writable([])
 export const queueIndex = writable(-1)
@@ -18,6 +18,16 @@ export const shuffleMode = persisted('subsonic_shuffle_mode', 'random')
 // Apply per-track ReplayGain (from the Subsonic API) to even out volume
 // differences between tracks from different sources.
 export const normalizeVolume = persisted('subsonic_normalize_volume', false)
+
+// Every track entering the queue goes through here to get its own queueKey
+// (see tagEntries).
+let nextQueueKey = 1
+function toEntries(tracks) {
+  const arr = Array.isArray(tracks) ? tracks : [tracks]
+  const entries = tagEntries(arr, nextQueueKey)
+  nextQueueKey += entries.length
+  return entries
+}
 
 export const currentTrack = derived(
   [queue, queueIndex],
@@ -39,7 +49,7 @@ export function cycleRepeat() {
 }
 
 export function playQueue(tracks, startIndex = 0) {
-  queue.set(tracks)
+  queue.set(toEntries(tracks))
   queueIndex.set(startIndex)
   playing.set(true)
 }
@@ -71,15 +81,14 @@ export function togglePlay() {
 
 // Insert tracks immediately after current position
 export function insertNext(tracks) {
-  const arr = Array.isArray(tracks) ? tracks : [tracks]
+  const arr = toEntries(tracks)
   const i = get(queueIndex)
   queue.update(q => [...q.slice(0, i + 1), ...arr, ...q.slice(i + 1)])
 }
 
 // Append tracks to end of queue
 export function enqueue(tracks) {
-  const arr = Array.isArray(tracks) ? tracks : [tracks]
-  queue.update(q => [...q, ...arr])
+  queue.update(q => [...q, ...toEntries(tracks)])
 }
 
 // Move a track from one index to another (for queue reordering)
@@ -144,7 +153,7 @@ auth.subscribe($auth => {
     const raw = localStorage.getItem(playerKey($auth.username))
     if (!raw) return
     const s = JSON.parse(raw)
-    if (Array.isArray(s.queue) && s.queue.length) queue.set(s.queue)
+    if (Array.isArray(s.queue) && s.queue.length) queue.set(toEntries(s.queue))
     if (typeof s.queueIndex === 'number') queueIndex.set(s.queueIndex)
     if (typeof s.volume === 'number') volume.set(s.volume)
     if (typeof s.shuffle === 'boolean') shuffle.set(s.shuffle)

@@ -33,13 +33,13 @@
   let gain = $derived($normalizeVolume ? computeReplayGain($currentTrack) : 1)
   let effectiveVolume = $derived(Math.min(1, Math.max(0, $volume * gain)))
 
-  // Which track the <audio> element currently holds, and how many seconds into
+  // Which queue entry the <audio> element currently holds, and how many seconds into
   // that track its stream begins. A seekable stream always starts at 0; a
   // transcoded one is re-requested at an offset to seek (see seek() below), so
   // the element's own clock is `trackPosition - streamOffset`. Deliberately
   // plain variables, not $state: they're bookkeeping, and making them reactive
   // would re-run the track effect every time we reload the stream.
-  let loadedTrackId = null
+  let loadedEntryKey = null
   let streamOffset = 0
 
   // True from the moment we point the element at a new stream until it has
@@ -68,22 +68,23 @@
     return audio ? streamOffset + audio.currentTime : 0
   }
 
-  // React to track changes — keyed on the track id so queue mutations
-  // (enqueue, insertNext, reorder) don't reset the current track, and neither
-  // does re-requesting the same track at a different offset.
+  // React to track changes — keyed on the queue entry (not the song id, since
+  // a song can be queued twice) so queue mutations (enqueue, insertNext,
+  // reorder) don't reset the current track, and neither does re-requesting
+  // the same track at a different offset.
   $effect(() => {
     const track = $currentTrack
     if (!audio) return
     if (!track) {
       audio.src = ''
-      loadedTrackId = null
+      loadedEntryKey = null
       streamOffset = 0
       awaitingLoad = false
       return
     }
-    if (track.id === loadedTrackId) return
+    if (track.queueKey === loadedEntryKey) return
 
-    loadedTrackId = track.id
+    loadedEntryKey = track.queueKey
     streamOffset = 0
     awaitingLoad = true
     audio.src = streamUrl(track.id)
