@@ -1,6 +1,4 @@
-import { writable } from 'svelte/store'
-
-const KEY = 'subsonic_view_modes'
+import { persisted } from './persisted.js'
 
 // 'shelf' | 'list', independently per view
 const defaults = {
@@ -10,16 +8,11 @@ const defaults = {
   artists: 'list',
 }
 
-function load() {
-  try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem(KEY)) }
-  } catch {
-    return { ...defaults }
-  }
-}
-
-export const viewModes = writable(load())
-viewModes.subscribe(v => localStorage.setItem(KEY, JSON.stringify(v)))
+// Merged over the defaults so a view added later still gets a mode.
+export const viewModes = persisted('subsonic_view_modes', defaults, {
+  parse: raw => ({ ...defaults, ...JSON.parse(raw) }),
+  serialize: JSON.stringify,
+})
 
 export function setViewMode(view, mode) {
   viewModes.update(v => ({ ...v, [view]: mode }))

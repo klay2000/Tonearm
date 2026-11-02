@@ -13,12 +13,18 @@ function credentials() {
   return a
 }
 
-function buildUrl(endpoint, extra = {}) {
-  const { serverUrl, username, password } = credentials()
+// A Subsonic request URL for an explicit set of credentials. Everything else
+// goes through buildUrl(); only testConnection() needs to sign a request
+// before those credentials have been saved to the auth store.
+function signedUrl({ serverUrl, username, password }, endpoint, extra = {}) {
   const url = new URL(`${serverUrl}/rest/${endpoint}`)
   Object.entries({ u: username, p: password, ...API_META, ...extra })
     .forEach(([k, v]) => url.searchParams.set(k, v))
   return url
+}
+
+function buildUrl(endpoint, extra = {}) {
+  return signedUrl(credentials(), endpoint, extra)
 }
 
 async function request(endpoint, params = {}) {
@@ -37,9 +43,7 @@ async function request(endpoint, params = {}) {
 }
 
 export async function testConnection(serverUrl, username, password) {
-  const url = new URL(`${serverUrl.replace(/\/$/, '')}/rest/ping`)
-  Object.entries({ u: username, p: password, ...API_META })
-    .forEach(([k, v]) => url.searchParams.set(k, v))
+  const url = signedUrl({ serverUrl: serverUrl.replace(/\/$/, ''), username, password }, 'ping')
   const res = await fetch(url)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()

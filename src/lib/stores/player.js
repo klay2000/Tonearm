@@ -1,6 +1,7 @@
 import { writable, derived, get } from 'svelte/store'
 import { auth } from './auth.js'
-import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove } from './queueLogic.js'
+import { persisted } from './persisted.js'
+import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove, randomOtherIndex, shuffledAroundCurrent, tagEntries } from './queueLogic.js'
 
 export const queue = writable([])
 export const queueIndex = writable(-1)
@@ -12,13 +13,21 @@ export const shuffle = writable(false)
 export const repeat = writable('off') // 'off' | 'all' | 'one'
 // 'random': pick a random next track each time
 // 'reorder': physically shuffle the queue when shuffle is toggled on
-export const shuffleMode = writable(localStorage.getItem('subsonic_shuffle_mode') ?? 'random')
-shuffleMode.subscribe(v => localStorage.setItem('subsonic_shuffle_mode', v))
+export const shuffleMode = persisted('subsonic_shuffle_mode', 'random')
 
 // Apply per-track ReplayGain (from the Subsonic API) to even out volume
 // differences between tracks from different sources.
-export const normalizeVolume = writable(localStorage.getItem('subsonic_normalize_volume') === 'true')
-normalizeVolume.subscribe(v => localStorage.setItem('subsonic_normalize_volume', String(v)))
+export const normalizeVolume = persisted('subsonic_normalize_volume', false)
+
+// Every track entering the queue goes through here to get its own queueKey
+// (see tagEntries).
+let nextQueueKey = 1
+function toEntries(tracks) {
+  const arr = Array.isArray(tracks) ? tracks : [tracks]
+  const entries = tagEntries(arr, nextQueueKey)
+  nextQueueKey += entries.length
+  return entries
+}
 
 export const currentTrack = derived(
   [queue, queueIndex],
@@ -30,15 +39,7 @@ export function toggleShuffle() {
   shuffle.set(next)
   if (next && get(shuffleMode) === 'reorder') {
     const i = get(queueIndex)
-    queue.update(q => {
-      const current = q[i]
-      const rest = q.filter((_, n) => n !== i)
-      for (let j = rest.length - 1; j > 0; j--) {
-        const k = Math.floor(Math.random() * (j + 1))
-        ;[rest[j], rest[k]] = [rest[k], rest[j]]
-      }
-      return [current, ...rest]
-    })
+    queue.update(q => shuffledAroundCurrent(q, i))
     queueIndex.set(0)
   }
 }
@@ -48,7 +49,7 @@ export function cycleRepeat() {
 }
 
 export function playQueue(tracks, startIndex = 0) {
-  queue.set(tracks)
+  queue.set(toEntries(tracks))
   queueIndex.set(startIndex)
   playing.set(true)
 }
@@ -59,9 +60,7 @@ export function playNext() {
   const s = get(shuffle)
   const r = get(repeat)
   if (s && get(shuffleMode) === 'random' && q.length > 1) {
-    let next
-    do { next = Math.floor(Math.random() * q.length) } while (next === i)
-    queueIndex.set(next)
+    queueIndex.set(randomOtherIndex(i, q.length))
   } else {
     queueIndex.set(linearNextIndex(i, q.length, r))
   }
@@ -82,15 +81,14 @@ export function togglePlay() {
 
 // Insert tracks immediately after current position
 export function insertNext(tracks) {
-  const arr = Array.isArray(tracks) ? tracks : [tracks]
+  const arr = toEntries(tracks)
   const i = get(queueIndex)
   queue.update(q => [...q.slice(0, i + 1), ...arr, ...q.slice(i + 1)])
 }
 
 // Append tracks to end of queue
 export function enqueue(tracks) {
-  const arr = Array.isArray(tracks) ? tracks : [tracks]
-  queue.update(q => [...q, ...arr])
+  queue.update(q => [...q, ...toEntries(tracks)])
 }
 
 // Move a track from one index to another (for queue reordering)
@@ -155,7 +153,7 @@ auth.subscribe($auth => {
     const raw = localStorage.getItem(playerKey($auth.username))
     if (!raw) return
     const s = JSON.parse(raw)
-    if (Array.isArray(s.queue) && s.queue.length) queue.set(s.queue)
+    if (Array.isArray(s.queue) && s.queue.length) queue.set(toEntries(s.queue))
     if (typeof s.queueIndex === 'number') queueIndex.set(s.queueIndex)
     if (typeof s.volume === 'number') volume.set(s.volume)
     if (typeof s.shuffle === 'boolean') shuffle.set(s.shuffle)

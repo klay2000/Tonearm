@@ -1,5 +1,5 @@
 <script>
-  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, queue, queueIndex, moveQueueItem, removeFromQueue, clearQueue, shuffle, repeat, toggleShuffle, cycleRepeat, normalizeVolume } from '../stores/player.js'
+  import { currentTrack, playing, currentTime, duration, volume, playNext, playPrev, togglePlay, shuffle, repeat, toggleShuffle, cycleRepeat, normalizeVolume } from '../stores/player.js'
   import { coverUrl, streamUrl, scrobble } from '../api/subsonic.js'
   import { computeReplayGain } from '../stores/replayGain.js'
   import { fmt, resolveDuration, shouldSubmitScrobble, planSeek } from '../stores/playerLogic.js'
@@ -7,6 +7,7 @@
   import { isTauri } from '../api/albumArtWindow.js'
   import { navigate } from '../stores/router.js'
   import { get } from 'svelte/store'
+  import QueuePanel from './QueuePanel.svelte'
 
   let audio = $state(null)
   let showQueue = $state(false)
@@ -32,13 +33,13 @@
   let gain = $derived($normalizeVolume ? computeReplayGain($currentTrack) : 1)
   let effectiveVolume = $derived(Math.min(1, Math.max(0, $volume * gain)))
 
-  // Which track the <audio> element currently holds, and how many seconds into
+  // Which queue entry the <audio> element currently holds, and how many seconds into
   // that track its stream begins. A seekable stream always starts at 0; a
   // transcoded one is re-requested at an offset to seek (see seek() below), so
   // the element's own clock is `trackPosition - streamOffset`. Deliberately
   // plain variables, not $state: they're bookkeeping, and making them reactive
   // would re-run the track effect every time we reload the stream.
-  let loadedTrackId = null
+  let loadedEntryKey = null
   let streamOffset = 0
 
   // True from the moment we point the element at a new stream until it has
@@ -48,27 +49,42 @@
   // and over.
   let awaitingLoad = false
 
+  // Start the element playing. If that fails for a real reason, put the store
+  // back so the button matches what's actually happening — otherwise the UI
+  // claims to be playing forever. AbortError is expected whenever a new src
+  // interrupts a pending play, so it isn't a failure.
+  function startAudio() {
+    audio.play().catch(err => {
+      if (err?.name !== 'AbortError') playing.set(false)
+    })
+  }
+
+  // Now-playing links; undefined when the track has nowhere to link to.
+  let goToAlbum = $derived($currentTrack?.albumId ? () => navigate(`#/album/${$currentTrack.albumId}`) : undefined)
+  let goToArtist = $derived($currentTrack?.artistId ? () => navigate(`#/artist/${$currentTrack.artistId}`) : undefined)
+
   // Current position within the *track*, regardless of where its stream starts.
   function trackPosition() {
     return audio ? streamOffset + audio.currentTime : 0
   }
 
-  // React to track changes — keyed on the track id so queue mutations
-  // (enqueue, insertNext, reorder) don't reset the current track, and neither
-  // does re-requesting the same track at a different offset.
+  // React to track changes — keyed on the queue entry (not the song id, since
+  // a song can be queued twice) so queue mutations (enqueue, insertNext,
+  // reorder) don't reset the current track, and neither does re-requesting
+  // the same track at a different offset.
   $effect(() => {
     const track = $currentTrack
     if (!audio) return
     if (!track) {
       audio.src = ''
-      loadedTrackId = null
+      loadedEntryKey = null
       streamOffset = 0
       awaitingLoad = false
       return
     }
-    if (track.id === loadedTrackId) return
+    if (track.queueKey === loadedEntryKey) return
 
-    loadedTrackId = track.id
+    loadedEntryKey = track.queueKey
     streamOffset = 0
     awaitingLoad = true
     audio.src = streamUrl(track.id)
@@ -81,18 +97,13 @@
     duration.set(track.duration || 0)
     scrobbled = false
     scrobble(track.id, { submission: false }).catch(() => {})
-    if ($playing) audio.play().catch(() => {})
+    if ($playing) startAudio()
   })
 
-  // React to play/pause. If play() fails for a real reason, put the store back
-  // so the button matches what's actually happening — otherwise the UI claims
-  // to be playing forever. AbortError is expected whenever a new src
-  // interrupts a pending play, so it isn't a failure.
+  // React to play/pause.
   $effect(() => {
     if (!audio) return
-    if ($playing) audio.play().catch(err => {
-      if (err?.name !== 'AbortError') playing.set(false)
-    })
+    if ($playing) startAudio()
     else audio.pause()
   })
 
@@ -128,9 +139,7 @@
     awaitingLoad = true
     audio.src = streamUrl(track.id, plan.offset)
     currentTime.set(plan.offset)
-    if ($playing) audio.play().catch(err => {
-      if (err?.name !== 'AbortError') playing.set(false)
-    })
+    if ($playing) startAudio()
   }
 
   function onLoadedMetadata() {
@@ -158,7 +167,7 @@
   function onEnded() {
     if ($repeat === 'one') {
       seek(0)
-      audio.play().catch(() => {})
+      startAudio()
     } else {
       playNext()
     }
@@ -203,38 +212,6 @@
   }
 
   let progress = $derived(scrubbing ? scrubRatio * 100 : ($duration ? ($currentTime / $duration) * 100 : 0))
-
-  // Queue drag-to-reorder
-  let dragFrom = $state(null)
-  let dragOver = $state(null)
-
-  function onDragStart(e, i) {
-    dragFrom = i
-    e.dataTransfer.effectAllowed = 'move'
-  }
-
-  function onDragOver(e, i) {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    dragOver = i
-  }
-
-  function onDragEnd() {
-    dragFrom = null
-    dragOver = null
-  }
-
-  function onDrop(e, i) {
-    e.preventDefault()
-    if (dragFrom !== null && dragFrom !== i) moveQueueItem(dragFrom, i)
-    dragFrom = null
-    dragOver = null
-  }
-
-  function playFromQueue(i) {
-    queueIndex.set(i)
-    playing.set(true)
-  }
 </script>
 
 <!-- svelte-ignore a11y_media_has_caption -->
@@ -247,46 +224,7 @@
 ></audio>
 
 {#if showQueue}
-  <div class="queue-panel">
-    <div class="queue-header">
-      <span class="queue-title">Queue</span>
-      <button onclick={() => showQueue = false} aria-label="Close queue">✕</button>
-    </div>
-    {#if !$queue.length}
-      <p class="queue-empty">There's nothing here.</p>
-    {:else}
-    <div class="queue-list">
-      {#each $queue as track, i (track.id)}
-        <div
-          class="queue-item"
-          class:queue-active={i === $queueIndex}
-          class:queue-dragging={i === dragFrom}
-          draggable="true"
-          ondragstart={e => onDragStart(e, i)}
-          ondragover={e => onDragOver(e, i)}
-          ondragend={onDragEnd}
-          ondrop={e => onDrop(e, i)}
-          onclick={() => playFromQueue(i)}
-          role="listitem"
-        >
-          {#if dragOver === i && dragFrom !== i}
-            <div class="drop-indicator"></div>
-          {/if}
-          <span class="queue-drag" onclick={e => e.stopPropagation()}>⠿</span>
-          <img src={coverUrl(track.coverArt ?? track.albumId, 32)} alt="" class="queue-thumb" />
-          <div class="queue-info">
-            <span class="queue-track-title">{track.title}</span>
-            <span class="queue-track-artist">{track.artist}</span>
-          </div>
-          <button class="queue-remove" onclick={e => { e.stopPropagation(); removeFromQueue(i) }} aria-label="Remove">✕</button>
-        </div>
-      {/each}
-    </div>
-    {#if $queue.length > 1}
-      <button class="queue-clear" onclick={clearQueue} aria-label="Clear queue">Clear</button>
-    {/if}
-    {/if}
-  </div>
+  <QueuePanel onclose={() => showQueue = false} />
 {/if}
 
 <div class="player">
@@ -312,28 +250,17 @@
   <div class="main-row">
   {#if $currentTrack}
     <div class="now-playing">
-      {#if $currentTrack.albumId}
-        <img
-          src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 48)}
-          alt=""
-          class="cover clickable"
-          onclick={() => navigate(`#/album/${$currentTrack.albumId}`)}
-          title="Go to album"
-        />
-      {:else}
-        <img src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 48)} alt="" class="cover" />
-      {/if}
+      <img
+        src={coverUrl($currentTrack.coverArt ?? $currentTrack.albumId, 48)}
+        alt=""
+        class="cover"
+        class:clickable={!!goToAlbum}
+        onclick={goToAlbum}
+        title={goToAlbum && 'Go to album'}
+      />
       <div class="info">
-        {#if $currentTrack.albumId}
-          <span class="title clickable" onclick={() => navigate(`#/album/${$currentTrack.albumId}`)} title="Go to album">{$currentTrack.title}</span>
-        {:else}
-          <span class="title">{$currentTrack.title}</span>
-        {/if}
-        {#if $currentTrack.artistId}
-          <span class="artist clickable" onclick={() => navigate(`#/artist/${$currentTrack.artistId}`)} title="Go to artist">{$currentTrack.artist}</span>
-        {:else}
-          <span class="artist">{$currentTrack.artist}</span>
-        {/if}
+        <span class="title" class:clickable={!!goToAlbum} onclick={goToAlbum} title={goToAlbum && 'Go to album'}>{$currentTrack.title}</span>
+        <span class="artist" class:clickable={!!goToArtist} onclick={goToArtist} title={goToArtist && 'Go to artist'}>{$currentTrack.artist}</span>
       </div>
       <div class="volume-group">
         <button class="mute-btn" onclick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'}>
@@ -659,112 +586,4 @@
   }
   :global(html:not(.no-hover)) .queue-btn:hover { opacity: 1; }
   .queue-btn-active { opacity: 1; color: var(--accent); }
-
-  /* Queue panel */
-  .queue-panel {
-    position: fixed;
-    bottom: var(--player-h);
-    right: 0;
-    width: 320px;
-    max-height: 60vh;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-bottom: none;
-    border-radius: 8px 0 0 0;
-    display: flex;
-    flex-direction: column;
-    z-index: 9;
-    box-shadow: -4px -4px 16px rgba(0,0,0,0.12);
-  }
-  .queue-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .queue-title { font-weight: 600; font-size: 13px; }
-  .queue-header button { opacity: 0.5; font-size: 13px; }
-  :global(html:not(.no-hover)) .queue-header button:hover { opacity: 1; }
-  .queue-empty { padding: 24px 16px; color: var(--text-muted); font-size: 13px; }
-  .queue-clear {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    padding: 5px 10px;
-    font-size: 11px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    color: var(--text-muted);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    opacity: 0.85;
-  }
-  :global(html:not(.no-hover)) .queue-clear:hover { opacity: 1; color: var(--text); }
-  .queue-list { overflow-y: auto; flex: 1; padding: 4px 0; }
-  .queue-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    cursor: pointer;
-    position: relative;
-  }
-  :global(html:not(.no-hover)) .queue-item:hover { background: var(--bg); }
-  .queue-active { background: color-mix(in srgb, var(--accent) 10%, transparent) !important; }
-  .queue-dragging { opacity: 0.4; }
-  .drop-indicator {
-    position: absolute;
-    top: 0;
-    left: 8px;
-    right: 8px;
-    height: 2px;
-    background: var(--accent);
-    border-radius: 1px;
-    pointer-events: none;
-  }
-  .queue-drag {
-    color: var(--text-muted);
-    font-size: 14px;
-    cursor: grab;
-    flex-shrink: 0;
-  }
-  .queue-thumb {
-    width: 32px;
-    height: 32px;
-    border-radius: 3px;
-    object-fit: cover;
-    background: var(--border);
-    flex-shrink: 0;
-  }
-  .queue-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  .queue-track-title {
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .queue-track-artist {
-    font-size: 11px;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .queue-remove {
-    opacity: 0;
-    font-size: 11px;
-    color: var(--text-muted);
-    padding: 2px 4px;
-    flex-shrink: 0;
-  }
-  :global(html:not(.no-hover)) .queue-item:hover .queue-remove { opacity: 1; }
-  :global(html:not(.no-hover)) .queue-remove:hover { color: #e05; }
 </style>

@@ -1,7 +1,4 @@
-import { writable } from 'svelte/store'
-
-const KEY = 'subsonic_greeting_mode'
+import { persisted } from './persisted.js'
 
 // 'random' | 'simple' | 'off'
-export const greetingMode = writable(localStorage.getItem(KEY) ?? 'random')
-greetingMode.subscribe(v => localStorage.setItem(KEY, v))
+export const greetingMode = persisted('subsonic_greeting_mode', 'random')

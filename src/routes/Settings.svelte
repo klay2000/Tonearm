@@ -14,6 +14,8 @@
   import { kioskTest, setKioskTest } from '../lib/stores/kioskTest.js'
   import { isTauri } from '../lib/api/albumArtWindow.js'
   import { autoCheckUpdates, updateState, checkForUpdates, installUpdate } from '../lib/stores/updates.js'
+  import SettingRow from '../lib/components/SettingRow.svelte'
+  import OptionGroup from '../lib/components/OptionGroup.svelte'
 
   const updateStatusText = {
     idle: '',
@@ -25,26 +27,16 @@
     error: '',
   }
 
-  function toggleCollabSeparator(key) {
-    collabSeparators.update(keys =>
-      keys.includes(key) ? keys.filter(k => k !== key) : [...keys, key]
-    )
-  }
+  // Most toggles are a plain On / Off pair.
+  const onOff = (on, off) => [
+    { value: true,  label: 'On',  desc: on },
+    { value: false, label: 'Off', desc: off },
+  ]
 
   const themeOptions = [
     { value: 'auto',  label: 'Auto',  desc: 'Switch at set times' },
     { value: 'light', label: 'Light', desc: 'Always light' },
     { value: 'dark',  label: 'Dark',  desc: 'Always dark' },
-  ]
-
-  const touchModeOptions = [
-    { value: true,  label: 'On',  desc: 'Drop hover highlights, which stick oddly after a tap on touchscreens' },
-    { value: false, label: 'Off', desc: 'Highlight things under the pointer as normal' },
-  ]
-
-  const liveSwitchOptions = [
-    { value: true,  label: 'On',  desc: 'Change theme as soon as a set time passes, even while the app is open' },
-    { value: false, label: 'Off', desc: 'Only pick the theme when the app starts' },
   ]
 
   const greetingModeOptions = [
@@ -58,10 +50,11 @@
     { value: 'reorder', label: 'Reorder queue', desc: 'Shuffle the queue in place when toggled on' },
   ]
 
-  const normalizeVolumeOptions = [
-    { value: false, label: 'Off', desc: 'Play tracks at their original volume' },
-    { value: true,  label: 'On',  desc: 'Even out volume using ReplayGain tags from your library' },
-  ]
+  // Off listed first: original volume is the default.
+  const normalizeVolumeOptions = onOff(
+    'Even out volume using ReplayGain tags from your library',
+    'Play tracks at their original volume',
+  ).reverse()
 
   const transcodeBitrateOptions = [
     { value: 0,   label: 'Original', desc: 'Stream files as stored, no transcoding' },
@@ -70,30 +63,20 @@
     { value: 128, label: '128 kbps', desc: 'Transcode to 128kbps MP3, saves the most bandwidth' },
   ]
 
-  const mergeCaseDuplicatesOptions = [
-    { value: true,  label: 'On',  desc: 'Combine "AC/DC" and "Ac/Dc" into one artist entry' },
-    { value: false, label: 'Off', desc: 'Show every casing variant as its own artist' },
-  ]
+  const separatorOptions = SEPARATOR_DEFS.map(def => ({ value: def.key, label: def.label }))
 
-  const splitCollabAlbumsOptions = [
-    { value: true,  label: 'On',  desc: 'Hide "Artist A feat. Artist B" entries and show those albums on each artist\'s own page' },
-    { value: false, label: 'Off', desc: 'Show collaboration entries as their own separate artists' },
-  ]
+  function toggleCollabSeparator(key) {
+    collabSeparators.update(keys =>
+      keys.includes(key) ? keys.filter(k => k !== key) : [...keys, key]
+    )
+  }
 
-  const fullscreenOptions = [
-    { value: true,  label: 'On',  desc: 'Run the app fullscreen (for kiosk setups)' },
-    { value: false, label: 'Off', desc: 'Run in a normal window' },
-  ]
-
-  const onScreenKeyboardOptions = [
-    { value: true,  label: 'On',  desc: 'Show a touch keyboard when a text field is focused' },
-    { value: false, label: 'Off', desc: 'Use a physical keyboard only' },
-  ]
-
-  const autoCheckUpdatesOptions = [
-    { value: true,  label: 'On',  desc: 'Check for a new version automatically at startup' },
-    { value: false, label: 'Off', desc: 'Only check when you press the button' },
-  ]
+  // Horizontal position of a scale marker under the slider track, allowing
+  // for the 14px thumb so each marker lines up with where the thumb sits.
+  function markerLeft(m) {
+    const t = (m - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)
+    return `calc(7px + ${t * 100}% - ${t * 14}px)`
+  }
 </script>
 
 <div class="settings">
@@ -101,195 +84,84 @@
 
   <section>
     <h2>Appearance</h2>
-    <div class="field">
-      <span class="label">Theme</span>
-      <div class="options">
-        {#each themeOptions as opt}
-          <button
-            class="option"
-            class:selected={$themePref === opt.value}
-            onclick={() => themePref.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
+    <SettingRow label="Theme">
+      <OptionGroup options={themeOptions} value={$themePref} onselect={v => themePref.set(v)} />
+    </SettingRow>
     {#if $themePref === 'auto'}
-      <div class="field">
-        <span class="label">Dark from</span>
-        <input
-          class="time-input"
-          type="time"
-          value={$darkStart}
-          onchange={(e) => darkStart.set(e.target.value)}
+      <SettingRow label="Dark from">
+        <input class="time-input" type="time" value={$darkStart} onchange={e => darkStart.set(e.target.value)} />
+      </SettingRow>
+      <SettingRow label="Light from">
+        <input class="time-input" type="time" value={$lightStart} onchange={e => lightStart.set(e.target.value)} />
+      </SettingRow>
+      <SettingRow label="Switch while running">
+        <OptionGroup
+          options={onOff('Change theme as soon as a set time passes, even while the app is open', 'Only pick the theme when the app starts')}
+          value={$liveSwitch}
+          onselect={v => liveSwitch.set(v)}
         />
-      </div>
-      <div class="field">
-        <span class="label">Light from</span>
-        <input
-          class="time-input"
-          type="time"
-          value={$lightStart}
-          onchange={(e) => lightStart.set(e.target.value)}
-        />
-      </div>
-      <div class="field">
-        <span class="label">Switch while running</span>
-        <div class="options">
-          {#each liveSwitchOptions as opt}
-            <button
-              class="option"
-              class:selected={$liveSwitch === opt.value}
-              onclick={() => liveSwitch.set(opt.value)}
-            >
-              <span class="opt-label">{opt.label}</span>
-              <span class="opt-desc">{opt.desc}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
+      </SettingRow>
     {/if}
-    <div class="field">
-      <span class="label">Touch friendly</span>
-      <div class="options">
-        {#each touchModeOptions as opt}
-          <button
-            class="option"
-            class:selected={$touchMode === opt.value}
-            onclick={() => touchMode.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
+    <SettingRow label="Touch friendly">
+      <OptionGroup
+        options={onOff('Drop hover highlights, which stick oddly after a tap on touchscreens', 'Highlight things under the pointer as normal')}
+        value={$touchMode}
+        onselect={v => touchMode.set(v)}
+      />
+    </SettingRow>
   </section>
 
   <section>
     <h2>Home</h2>
-    <div class="field">
-      <span class="label">Greeting</span>
-      <div class="options">
-        {#each greetingModeOptions as opt}
-          <button
-            class="option"
-            class:selected={$greetingMode === opt.value}
-            onclick={() => greetingMode.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
+    <SettingRow label="Greeting">
+      <OptionGroup options={greetingModeOptions} value={$greetingMode} onselect={v => greetingMode.set(v)} />
+    </SettingRow>
   </section>
 
   <section>
     <h2>Library</h2>
-    <div class="field">
-      <span class="label">Merge duplicate artists</span>
-      <div class="options">
-        {#each mergeCaseDuplicatesOptions as opt}
-          <button
-            class="option"
-            class:selected={$mergeCaseDuplicates === opt.value}
-            onclick={() => mergeCaseDuplicates.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
-    <div class="field">
-      <span class="label">Collab albums</span>
-      <div class="options">
-        {#each splitCollabAlbumsOptions as opt}
-          <button
-            class="option"
-            class:selected={$splitCollabAlbums === opt.value}
-            onclick={() => splitCollabAlbums.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
+    <SettingRow label="Merge duplicate artists">
+      <OptionGroup
+        options={onOff('Combine "AC/DC" and "Ac/Dc" into one artist entry', 'Show every casing variant as its own artist')}
+        value={$mergeCaseDuplicates}
+        onselect={v => mergeCaseDuplicates.set(v)}
+      />
+    </SettingRow>
+    <SettingRow label="Collab albums">
+      <OptionGroup
+        options={onOff('Hide "Artist A feat. Artist B" entries and show those albums on each artist\'s own page', 'Show collaboration entries as their own separate artists')}
+        value={$splitCollabAlbums}
+        onselect={v => splitCollabAlbums.set(v)}
+      />
+    </SettingRow>
     {#if $splitCollabAlbums}
-      <div class="field">
-        <span class="label">Separators</span>
-        <div class="options">
-          {#each SEPARATOR_DEFS as def}
-            <button
-              class="option chip"
-              class:selected={$collabSeparators.includes(def.key)}
-              onclick={() => toggleCollabSeparator(def.key)}
-            >
-              <span class="opt-label">{def.label}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
+      <SettingRow label="Separators">
+        <OptionGroup
+          chip
+          options={separatorOptions}
+          isSelected={opt => $collabSeparators.includes(opt.value)}
+          onselect={toggleCollabSeparator}
+        />
+      </SettingRow>
     {/if}
   </section>
 
   <section>
     <h2>Playback</h2>
-    <div class="field">
-      <span class="label">Shuffle mode</span>
-      <div class="options">
-        {#each shuffleModeOptions as opt}
-          <button
-            class="option"
-            class:selected={$shuffleMode === opt.value}
-            onclick={() => shuffleMode.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
-    <div class="field">
-      <span class="label">Normalize volume</span>
-      <div class="options">
-        {#each normalizeVolumeOptions as opt}
-          <button
-            class="option"
-            class:selected={$normalizeVolume === opt.value}
-            onclick={() => normalizeVolume.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
-    <div class="field">
-      <span class="label">Streaming quality</span>
-      <div class="options">
-        {#each transcodeBitrateOptions as opt}
-          <button
-            class="option"
-            class:selected={$transcodeBitrate === opt.value}
-            onclick={() => transcodeBitrate.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
+    <SettingRow label="Shuffle mode">
+      <OptionGroup options={shuffleModeOptions} value={$shuffleMode} onselect={v => shuffleMode.set(v)} />
+    </SettingRow>
+    <SettingRow label="Normalize volume">
+      <OptionGroup options={normalizeVolumeOptions} value={$normalizeVolume} onselect={v => normalizeVolume.set(v)} />
+    </SettingRow>
+    <SettingRow label="Streaming quality">
+      <OptionGroup options={transcodeBitrateOptions} value={$transcodeBitrate} onselect={v => transcodeBitrate.set(v)} />
+    </SettingRow>
   </section>
 
   <section>
     <h2>Kiosk</h2>
-    <div class="field">
-      <span class="label">Interface scale</span>
+    <SettingRow label="Interface scale">
       <div class="scale-control">
         <div class="scale-row">
           <input
@@ -300,7 +172,7 @@
             step={SCALE_STEP}
             list="scale-markers"
             value={$uiScale}
-            oninput={(e) => uiScale.set(clampScale(e.target.value))}
+            oninput={e => uiScale.set(clampScale(e.target.value))}
           />
           <span class="scale-value mono">{formatScale($uiScale)}</span>
         </div>
@@ -309,57 +181,35 @@
         </datalist>
         <div class="scale-ticks">
           {#each SCALE_MARKERS as m}
-            <button
-              class="scale-tick"
-              style="left: calc(7px + {((m - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100}% - {((m - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 14}px)"
-              onclick={() => uiScale.set(m)}
-            >{formatScale(m)}</button>
+            <button class="scale-tick" style="left: {markerLeft(m)}" onclick={() => uiScale.set(m)}>{formatScale(m)}</button>
           {/each}
         </div>
-        <span class="opt-desc">Sizes up the whole interface for a kiosk screen you view from a distance.</span>
+        <span class="hint">Sizes up the whole interface for a kiosk screen you view from a distance.</span>
       </div>
-    </div>
-    <div class="field">
-      <span class="label">Fullscreen</span>
-      <div class="options">
-        {#each fullscreenOptions as opt}
-          <button
-            class="option"
-            class:selected={$fullscreen === opt.value}
-            onclick={() => fullscreen.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
-    <div class="field">
-      <span class="label">On-screen keyboard</span>
-      <div class="options">
-        {#each onScreenKeyboardOptions as opt}
-          <button
-            class="option"
-            class:selected={$onScreenKeyboard === opt.value}
-            onclick={() => onScreenKeyboard.set(opt.value)}
-          >
-            <span class="opt-label">{opt.label}</span>
-            <span class="opt-desc">{opt.desc}</span>
-          </button>
-        {/each}
-      </div>
-    </div>
+    </SettingRow>
+    <SettingRow label="Fullscreen">
+      <OptionGroup
+        options={onOff('Run the app fullscreen (for kiosk setups)', 'Run in a normal window')}
+        value={$fullscreen}
+        onselect={v => fullscreen.set(v)}
+      />
+    </SettingRow>
+    <SettingRow label="On-screen keyboard">
+      <OptionGroup
+        options={onOff('Show a touch keyboard when a text field is focused', 'Use a physical keyboard only')}
+        value={$onScreenKeyboard}
+        onselect={v => onScreenKeyboard.set(v)}
+      />
+    </SettingRow>
   </section>
 
   {#if isTauri}
     <section>
       <h2>Updates</h2>
-      <div class="field">
-        <span class="label">Current version</span>
+      <SettingRow label="Current version">
         <span class="value mono">{__APP_VERSION__}</span>
-      </div>
-      <div class="field">
-        <span class="label">Check</span>
+      </SettingRow>
+      <SettingRow label="Check">
         <div class="update-controls">
           <button
             class="update-btn"
@@ -372,8 +222,6 @@
             <button class="update-btn primary" onclick={installUpdate}>
               Install update {$updateState.version}
             </button>
-          {/if}
-          {#if $updateState.status === 'available'}
             <span class="update-status accent">Version {$updateState.version} is available.</span>
           {:else if $updateState.status === 'error'}
             <span class="update-status error">Couldn't check: {$updateState.error}</span>
@@ -381,57 +229,40 @@
             <span class="update-status">{updateStatusText[$updateState.status]}</span>
           {/if}
         </div>
-      </div>
-      <div class="field">
-        <span class="label">Automatic checks</span>
-        <div class="options">
-          {#each autoCheckUpdatesOptions as opt}
-            <button
-              class="option"
-              class:selected={$autoCheckUpdates === opt.value}
-              onclick={() => autoCheckUpdates.set(opt.value)}
-            >
-              <span class="opt-label">{opt.label}</span>
-              <span class="opt-desc">{opt.desc}</span>
-            </button>
-          {/each}
-        </div>
-      </div>
+      </SettingRow>
+      <SettingRow label="Automatic checks">
+        <OptionGroup
+          options={onOff('Check for a new version automatically at startup', 'Only check when you press the button')}
+          value={$autoCheckUpdates}
+          onselect={v => autoCheckUpdates.set(v)}
+        />
+      </SettingRow>
     </section>
   {/if}
 
   <section>
     <h2>Server</h2>
-    <div class="field">
-      <span class="label">Connected to</span>
+    <SettingRow label="Connected to">
       <span class="value">{$auth?.serverUrl}</span>
-    </div>
-    <div class="field">
-      <span class="label">Username</span>
+    </SettingRow>
+    <SettingRow label="Username">
       <span class="value">{$auth?.username}</span>
-    </div>
+    </SettingRow>
     <button class="logout-btn" onclick={logout}>Log out</button>
   </section>
 
   <section>
     <h2>Developer</h2>
-    <div class="field">
-      <span class="label">Kiosk mode test</span>
-      <div class="options">
-        <button
-          class="option"
-          class:selected={$kioskTest}
-          onclick={() => setKioskTest(!$kioskTest)}
-        >
-          <span class="opt-label">{$kioskTest ? 'Disable' : 'Enable'}</span>
-          <span class="opt-desc">Turn fullscreen and the on-screen keyboard on together</span>
-        </button>
-      </div>
-    </div>
-    <div class="field">
-      <span class="label">Build</span>
+    <SettingRow label="Kiosk mode test">
+      <OptionGroup
+        options={[{ value: !$kioskTest, label: $kioskTest ? 'Disable' : 'Enable', desc: 'Turn fullscreen and the on-screen keyboard on together' }]}
+        isSelected={() => $kioskTest}
+        onselect={setKioskTest}
+      />
+    </SettingRow>
+    <SettingRow label="Build">
       <span class="value mono">{__GIT_BRANCH__} @ {__GIT_HASH__}</span>
-    </div>
+    </SettingRow>
   </section>
 </div>
 
@@ -451,19 +282,6 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .field {
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    margin-bottom: 12px;
-  }
-  .label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    width: 100px;
-    flex-shrink: 0;
-  }
   .value { font-size: 13px; }
   .mono { font-family: monospace; font-size: 12px; color: var(--text-muted); }
 
@@ -477,6 +295,8 @@
     font-family: inherit;
   }
   .time-input:focus { border-color: var(--accent); outline: none; }
+
+  .hint { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
 
   .scale-control { display: flex; flex-direction: column; gap: 6px; max-width: 320px; }
   .scale-row { display: flex; align-items: center; gap: 12px; }
@@ -523,26 +343,6 @@
   }
   :global(html:not(.no-hover)) .scale-tick:hover { color: var(--accent); }
 
-  .options { display: flex; gap: 8px; flex-wrap: wrap; }
-  .option {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    min-width: 110px;
-    transition: border-color 0.1s;
-  }
-  .option.chip {
-    min-width: auto;
-    padding: 6px 12px;
-  }
-  :global(html:not(.no-hover)) .option:hover { border-color: var(--accent); }
-  .option.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
-  .opt-label { font-weight: 600; font-size: 13px; }
-  .opt-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
 
   .logout-btn {
     margin-top: 4px;

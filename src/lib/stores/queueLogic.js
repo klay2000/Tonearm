@@ -30,3 +30,31 @@ export function indexAfterRemove(current, removed, newLength) {
   if (removed === current) return Math.min(current, newLength - 1)
   return current
 }
+
+// Shuffle mode 'random': a random index other than the current one. Needs at
+// least two tracks. `random` is injectable so tests can make it deterministic.
+export function randomOtherIndex(current, length, random = Math.random) {
+  let next
+  do { next = Math.floor(random() * length) } while (next === current)
+  return next
+}
+
+// Shuffle mode 'reorder': the queue with the playing track moved to the front
+// and everything else Fisher–Yates shuffled behind it.
+export function shuffledAroundCurrent(queue, current, random = Math.random) {
+  const rest = queue.filter((_, n) => n !== current)
+  for (let j = rest.length - 1; j > 0; j--) {
+    const k = Math.floor(random() * (j + 1))
+    ;[rest[j], rest[k]] = [rest[k], rest[j]]
+  }
+  return [queue[current], ...rest]
+}
+
+// Queue entries are tagged with their own `queueKey`, separate from the song
+// id, because the same song can be in the queue more than once. Anything that
+// needs to tell entries apart (the queue list's keyed #each, PlayerBar's "has
+// the track changed?" check) uses the key; the song id is only for the server.
+// Returns tagged copies numbered from `firstKey`; the inputs aren't modified.
+export function tagEntries(tracks, firstKey) {
+  return tracks.map((track, n) => ({ ...track, queueKey: firstKey + n }))
+}

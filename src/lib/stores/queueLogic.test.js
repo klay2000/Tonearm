@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove } from './queueLogic.js'
+import { linearNextIndex, prevIndex, indexAfterMove, indexAfterRemove, randomOtherIndex, shuffledAroundCurrent, tagEntries } from './queueLogic.js'
 
 test('linearNextIndex advances within the queue', () => {
   assert.equal(linearNextIndex(0, 3, 'off'), 1)
@@ -55,4 +55,33 @@ test('indexAfterRemove: removing the playing track clamps to the new last index'
   assert.equal(indexAfterRemove(2, 2, 2), 1)
   // queue emptied entirely
   assert.equal(indexAfterRemove(0, 0, 0), -1)
+})
+
+// Feeds a fixed sequence of Math.random-style values.
+const sequence = values => () => values.shift()
+
+test('randomOtherIndex never picks the current track', () => {
+  // first roll lands on the current index (1) and must be re-rolled
+  assert.equal(randomOtherIndex(1, 3, sequence([0.4, 0.9])), 2)
+  assert.equal(randomOtherIndex(1, 3, sequence([0.1])), 0)
+})
+
+test('shuffledAroundCurrent puts the playing track first and keeps every track', () => {
+  const q = ['a', 'b', 'c', 'd', 'e']
+  const out = shuffledAroundCurrent(q, 2)
+  assert.equal(out[0], 'c')
+  assert.deepEqual([...out].sort(), [...q].sort())
+  assert.deepEqual(q, ['a', 'b', 'c', 'd', 'e'], 'input queue is not mutated')
+})
+
+// Regression: the queue used to be keyed on song id, so "play next" on a song
+// already in the queue crashed the queue panel (duplicate #each key) and
+// stalled playback when it was reached (same id looked like "no change").
+test('tagEntries gives the same song a distinct key each time it is queued', () => {
+  const song = { id: 's1', title: 'Song' }
+  const [a, b] = tagEntries([song, song], 10)
+  assert.equal(a.id, b.id)
+  assert.notEqual(a.queueKey, b.queueKey)
+  assert.deepEqual([a.queueKey, b.queueKey], [10, 11])
+  assert.equal(song.queueKey, undefined, 'input track is not mutated')
 })
