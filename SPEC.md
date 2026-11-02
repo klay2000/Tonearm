@@ -57,8 +57,10 @@ subsonic-client/
     │   ├── stores/
     │   │   ├── auth.js        # login state + credentials (localStorage)
     │   │   ├── albumArtMode.js # album art mode toggle
+    │   │   ├── persisted.js   # persisted(key, default): writable store saved to localStorage
+    │   │   ├── persistedLogic.js # pure parse/serialize for persisted() (+ persistedLogic.test.js)
     │   │   ├── player.js      # queue, playback state, volume
-    │   │   ├── queueLogic.js  # pure queue-index helpers (+ queueLogic.test.js)
+    │   │   ├── queueLogic.js  # pure queue-index + shuffle helpers (+ queueLogic.test.js)
     │   │   ├── replayGain.js  # pure ReplayGain-to-gain math (+ replayGain.test.js)
     │   │   ├── router.js      # hash-based router
     │   │   ├── hashRoute.js   # pure #hash parsing (+ hashRoute.test.js)
@@ -76,7 +78,10 @@ subsonic-client/
     │       ├── Logo.svelte         # "Tonearm" wordmark (Neuton), used in Header and Login
     │       ├── Header.svelte
     │       ├── Sidebar.svelte
-    │       ├── PlayerBar.svelte
+    │       ├── PlayerBar.svelte    # <audio> element, transport controls, scrub bar
+    │       ├── QueuePanel.svelte   # pop-up queue: reorder, jump, remove
+    │       ├── SettingRow.svelte   # labelled row on the Settings page
+    │       ├── OptionGroup.svelte  # selectable option cards used by every Settings choice
     │       ├── ArtistAvatar.svelte
     │       ├── CoverArt.svelte
     │       ├── AlbumGrid.svelte    # renders albums as a shelf (grid) or list

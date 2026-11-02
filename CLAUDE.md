@@ -32,13 +32,16 @@ src/
     api/subsonic.js           # all Gonic API calls; buildUrl() handles auth
     stores/
       auth.js                 # login state + credentials (localStorage)
+      persisted.js            # persisted(key, default) — use for any new localStorage-backed setting
       player.js               # queue, playback, shuffle/repeat (all player state lives here)
       router.js               # hash-based router
       theme.js                # dark/light/auto theme + sunrise/sunset logic
     components/
       Header.svelte
       Sidebar.svelte
-      PlayerBar.svelte        # audio element, controls, queue panel
+      PlayerBar.svelte        # audio element, controls
+      QueuePanel.svelte       # queue pop-up (reorder/remove)
+      OptionGroup.svelte      # option cards for Settings (with SettingRow.svelte)
       ArtistAvatar.svelte     # lazy image load: TheAudioDB → Wikidata → initials
   routes/
     Home.svelte               # greeting + recently-added + discover shelves
